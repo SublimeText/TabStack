@@ -1,6 +1,6 @@
 # TabStack
 
-TabStack is a Sublime Text package
+TabStack is a [Sublime Text][] (build 4205+) package
 for switching between open tabs using an MRU-style stack.
 It keeps tab order per window
 and previews tabs in the quick panel
@@ -47,3 +47,5 @@ It polls the native key state APIs to detect modifier release events.
 Linux relies on X11 or XWayland.
 Native Wayland support is unlikely to be possible
 due to security restrictions in the protocol.
+
+[Sublime Text]: https://www.sublimetext.com/
