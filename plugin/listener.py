@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from time import time
+
 from ._compat import sublime, sublime_plugin
+from .commands import hydrate_mru_state
 from .state import get_state, remove_view_from_all, remove_window_state
 
 
@@ -13,10 +16,16 @@ class TabStackListener(sublime_plugin.EventListener):
             return
 
         state = get_state(window)
+        if not state.mru_initialized:
+            hydrate_mru_state(state, window.views())
+            return
+
+        hydrate_mru_state(state, window.views())
         if state.session_active:
             return
 
         view_id = view.id()
+        view.settings().set("tab_stack.last_activated", time())
         state.mru_view_ids = [item for item in state.mru_view_ids if item != view_id]
         state.mru_view_ids.insert(0, view_id)
 

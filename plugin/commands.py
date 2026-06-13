@@ -65,9 +65,7 @@ def _collect_entries(window, state) -> list[_Entry]:
         if _is_tab_view(view):
             active_ids.add(view.id())
 
-    if not state.mru_initialized:
-        state.mru_view_ids = _initial_view_ids(window_views)
-        state.mru_initialized = True
+    hydrate_mru_state(state, window_views)
 
     for view_id in state.mru_view_ids:
         if view_id not in active_ids:
@@ -82,24 +80,32 @@ def _collect_entries(window, state) -> list[_Entry]:
     return entries
 
 
+def hydrate_mru_state(state, views) -> None:
+    if state.mru_initialized:
+        return
+
+    state.mru_view_ids = _initial_view_ids(views)
+    state.mru_initialized = True
+
+
 def _initial_view_ids(views) -> list[int]:
-    tab_views = [view for view in views if _is_tab_view(view)]
+    tab_views = []
+    for index, view in enumerate(views):
+        if _is_tab_view(view):
+            tab_views.append((index, view))
+
     if not tab_views:
         return []
 
-    active_view = None
-    window = tab_views[0].window()
-    if window is not None:
-        active_view = window.active_view()
+    tab_views.sort(key=lambda item: _activation_sort_key(item[1], item[0]))
+    return [view.id() for _, view in tab_views]
 
-    start_index = 0
-    if active_view is not None:
-        for index, view in enumerate(tab_views):
-            if view.id() == active_view.id():
-                start_index = index
-                break
 
-    return [view.id() for view in tab_views[start_index:] + tab_views[:start_index]]
+def _activation_sort_key(view, fallback_index: int) -> tuple[bool, float, int]:
+    value = view.settings().get("tab_stack.last_activated")
+    if value is None:
+        return True, 0.0, fallback_index
+    return False, -float(value), fallback_index
 
 
 def _is_tab_view(view) -> bool:

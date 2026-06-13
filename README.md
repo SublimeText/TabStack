@@ -2,6 +2,7 @@
 
 TabStack is a Sublime Text package for switching between open tabs using an MRU-style stack.
 It keeps tab order per window and previews tabs in the quick panel before committing the switch.
+It also preserves tab ordering across sessions by storing each view's last activation time.
 
 ## Installation
 
