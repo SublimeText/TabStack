@@ -7,10 +7,12 @@ It also preserves tab ordering across sessions by storing each view's last activ
 ## Installation
 
 TabStack is not available on Package Control yet.
-Install it manually with git:
+To install it manually with git,
+first locate your Packages folder (*Preferences > Browse Packages...*)
+and then clone the repository into that folder:
 
 ```bash
-git clone <repository-url> "${HOME}/.config/sublime-text/Packages/TabStack"
+git clone https://github.com/FichteFoll/TabStack
 ```
 
 To update later, run `git pull` inside the `TabStack` directory
