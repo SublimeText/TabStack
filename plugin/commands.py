@@ -159,7 +159,7 @@ def _show_panel(window, state, entries: list[_Entry]) -> None:
         flags=sublime.KEEP_OPEN_ON_FOCUS_LOST,
         selected_index=state.session_selected_index,
         on_highlight=on_highlight,
-        placeholder="Release ctrl to close; Hit ctrl+escape to abort"
+        placeholder="Release ctrl to close; Hit ctrl+escape to abort",
     )
     if entries:
         _preview_entry(window, state, entries[state.session_selected_index])
