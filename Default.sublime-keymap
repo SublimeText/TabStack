@@ -3,28 +3,16 @@
     "keys": ["ctrl+tab"],
     "command": "show_tab_stack",
     "context": [
-      {"key": "tab_stack.quick_panel", "operator": "equal", "operand": false}
+      {"key": "tab_stack.quick_panel", "operator": "equal", "operand": false},
+      {"key": "tab_stack.ctrl_release_available", "operator": "equal", "operand": true}
     ]
   },
   {
     "keys": ["ctrl+shift+tab"],
     "command": "show_tab_stack",
     "context": [
-      {"key": "tab_stack.quick_panel", "operator": "equal", "operand": false}
-    ]
-  },
-  {
-    "keys": ["ctrl+up"],
-    "command": "show_tab_stack",
-    "context": [
-      {"key": "tab_stack.quick_panel", "operator": "equal", "operand": false}
-    ]
-  },
-  {
-    "keys": ["ctrl+down"],
-    "command": "show_tab_stack",
-    "context": [
-      {"key": "tab_stack.quick_panel", "operator": "equal", "operand": false}
+      {"key": "tab_stack.quick_panel", "operator": "equal", "operand": false},
+      {"key": "tab_stack.ctrl_release_available", "operator": "equal", "operand": true}
     ]
   },
   {

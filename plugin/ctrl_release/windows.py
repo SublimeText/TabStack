@@ -5,6 +5,7 @@ from collections.abc import Callable
 from typing import Any
 
 from .._compat import sublime
+from ._availability import set_unavailable
 
 _VK_CONTROL = 0x11
 _USER32: Any | None = None
@@ -52,6 +53,10 @@ class CtrlReleasePoller:
         return _get_user32()
 
 
+def probe() -> bool:
+    return _get_user32() is not None
+
+
 def _get_user32() -> Any | None:
     global _USER32
     if _USER32 is not None:
@@ -59,7 +64,9 @@ def _get_user32() -> Any | None:
 
     try:
         user32 = ctypes.CDLL("user32.dll")
-    except AttributeError, OSError:
+    except (AttributeError, OSError) as exc:
+        print(f"TabStack: failed to open user32.dll: {exc}")
+        set_unavailable()
         return None
 
     user32.GetAsyncKeyState.argtypes = [ctypes.c_int]

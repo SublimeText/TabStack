@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .._compat import sublime
+from ._availability import set_unavailable
 
 _XK_Control_L = 0xFFE3
 _XK_Control_R = 0xFFE4
@@ -97,6 +98,10 @@ class CtrlReleasePoller:
         )
 
 
+def probe() -> bool:
+    return _get_x11() is not None
+
+
 def _keycode_is_down(keymap, keycode: int) -> bool:
     if not keycode:
         return False
@@ -114,7 +119,9 @@ def _get_x11() -> Any | None:
 
     try:
         x11 = ctypes.CDLL(lib_name)
-    except OSError:
+    except OSError as exc:
+        print(f"TabStack: failed to open {lib_name}: {exc}")
+        set_unavailable()
         return None
 
     x11.XOpenDisplay.argtypes = [ctypes.c_char_p]

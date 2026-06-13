@@ -4,6 +4,7 @@ from time import time
 
 from ._compat import sublime, sublime_plugin
 from .commands import hydrate_mru_state
+from .ctrl_release import is_available
 from .state import get_state, remove_view_from_all, remove_window_state
 
 
@@ -28,18 +29,21 @@ class TabStackListener(sublime_plugin.EventListener):
         state.mru_view_ids.insert(0, view_id)
 
     def on_query_context(self, view, key, operator, operand, match_all):
-        if key != "tab_stack.quick_panel":
+        if key == "tab_stack.ctrl_release_available":
+            value = is_available()
+        elif key == "tab_stack.quick_panel":
+            if view is None:
+                return False
+
+            window = view.window()
+            if window is None:
+                return False
+
+            state = get_state(window)
+            value = state.session_active
+        else:
             return None
 
-        if view is None:
-            return False
-
-        window = view.window()
-        if window is None:
-            return False
-
-        state = get_state(window)
-        value = state.session_active
         if operator == sublime.OP_EQUAL:
             return value == bool(operand)
         if operator == sublime.OP_NOT_EQUAL:

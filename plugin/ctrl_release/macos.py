@@ -6,6 +6,7 @@ from collections.abc import Callable
 from typing import Any
 
 from .._compat import sublime
+from ._availability import set_unavailable
 
 _CG_EVENT_SOURCE_STATE_COMBINED_SESSION_STATE = 0
 _K_VK_CONTROL = 59
@@ -67,6 +68,10 @@ class CtrlReleasePoller:
         return _get_core_graphics()
 
 
+def probe() -> bool:
+    return _get_core_graphics() is not None
+
+
 def _get_core_graphics() -> Any | None:
     global _CORE_GRAPHICS
     if _CORE_GRAPHICS is not None:
@@ -78,7 +83,9 @@ def _get_core_graphics() -> Any | None:
 
     try:
         core_graphics = ctypes.CDLL(lib_name)
-    except OSError:
+    except OSError as exc:
+        print(f"TabStack: failed to open {lib_name}: {exc}")
+        set_unavailable()
         return None
 
     core_graphics.CGEventSourceKeyState.argtypes = [ctypes.c_long, ctypes.c_uint32]

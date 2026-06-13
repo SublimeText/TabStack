@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from ._compat import sublime, sublime_plugin
 from .captions import caption_for_view
-from .ctrl_release import CtrlReleasePoller
+from .ctrl_release import CtrlReleasePoller, is_available
 from .state import get_state
 
 
@@ -18,6 +18,9 @@ class ShowTabStackCommand(sublime_plugin.WindowCommand):
     def run(self) -> None:
         window = self.window
         if window is None:
+            return
+
+        if not is_available():
             return
 
         state = get_state(window)
