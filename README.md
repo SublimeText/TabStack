@@ -8,6 +8,10 @@ before committing the switch.
 It also preserves tab ordering across sessions
 by storing each view's last activation time.
 
+<video controls muted playsinline loop>
+  <source src="./media/showcase.mp4" type="video/mp4">
+</video>
+
 ## Installation
 
 TabStack is not available on Package Control yet.
