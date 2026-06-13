@@ -1,8 +1,8 @@
 import sys
 
-print(__package__)
-# clear modules cache if package is reloaded (after update?)
-prefix = __package__ + ".plugin"  # don't clear the base package
+# Clear sys.modules cache if package is reloaded, manually or after an update.
+assert __package__ is not None
+prefix = __package__ + ".plugin"
 for module_name in [
     module_name
     for module_name in sys.modules
@@ -12,4 +12,4 @@ for module_name in [
     del sys.modules[module_name]
 del prefix
 
-from .plugin import *  # noqa: F401,E402,F403
+from .plugin import *  # noqa: F401,E402,F403 # ty: ignore[unresolved-import]
