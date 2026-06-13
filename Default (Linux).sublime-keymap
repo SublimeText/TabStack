@@ -1,0 +1,69 @@
+[
+  {
+    "keys": ["ctrl+tab"],
+    "command": "show_tab_stack",
+    "context": [
+      {"key": "tab_stack.quick_panel", "operator": "equal", "operand": false}
+    ]
+  },
+  {
+    "keys": ["ctrl+shift+tab"],
+    "command": "show_tab_stack",
+    "context": [
+      {"key": "tab_stack.quick_panel", "operator": "equal", "operand": false}
+    ]
+  },
+  {
+    "keys": ["ctrl+up"],
+    "command": "show_tab_stack",
+    "context": [
+      {"key": "tab_stack.quick_panel", "operator": "equal", "operand": false}
+    ]
+  },
+  {
+    "keys": ["ctrl+down"],
+    "command": "show_tab_stack",
+    "context": [
+      {"key": "tab_stack.quick_panel", "operator": "equal", "operand": false}
+    ]
+  },
+  {
+    "keys": ["ctrl+tab"],
+    "command": "move",
+    "args": {"by": "lines", "forward": true},
+    "context": [
+      {"key": "tab_stack.quick_panel", "operator": "equal", "operand": true}
+    ]
+  },
+  {
+    "keys": ["ctrl+shift+tab"],
+    "command": "move",
+    "args": {"by": "lines", "forward": false},
+    "context": [
+      {"key": "tab_stack.quick_panel", "operator": "equal", "operand": true}
+    ]
+  },
+  {
+    "keys": ["ctrl+up"],
+    "command": "move",
+    "args": {"by": "lines", "forward": false},
+    "context": [
+      {"key": "tab_stack.quick_panel", "operator": "equal", "operand": true}
+    ]
+  },
+  {
+    "keys": ["ctrl+down"],
+    "command": "move",
+    "args": {"by": "lines", "forward": true},
+    "context": [
+      {"key": "tab_stack.quick_panel", "operator": "equal", "operand": true}
+    ]
+  },
+  {
+    "keys": ["ctrl+escape"],
+    "command": "tab_stack_cancel",
+    "context": [
+      {"key": "tab_stack.quick_panel", "operator": "equal", "operand": true}
+    ]
+  }
+]

@@ -1,0 +1,12 @@
+[project]
+name = "tab-stack"
+version = "0.1.0"
+description = "Per-window MRU tab stack for Sublime Text"
+requires-python = ">=3.14"
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
