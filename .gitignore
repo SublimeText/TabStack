@@ -1,0 +1,6 @@
+# caches
+.ruff_cache/
+__pycache__/
+
+# uv's default venv location
+.venv/

@@ -22,7 +22,8 @@
 
 ## Verification
 
+- Run dev tools with `uv run`, for example `uv run ruff check .` and `uv run ruff format .`.
 - `pyproject.toml` only defines `ruff` settings.
-- Use `ruff check .` for linting.
-- Use `ruff format .` for formatting.
+- Use `ruff check .` for linting via `uv run`.
+- Use `ruff format .` for formatting via `uv run`.
 - No repo-local test runner or task file is currently present.
