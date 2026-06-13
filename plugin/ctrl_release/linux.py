@@ -11,6 +11,7 @@ from .._compat import sublime
 
 _XK_Control_L = 0xFFE3
 _XK_Control_R = 0xFFE4
+_X11: Any | None = None
 
 
 @dataclass(slots=True)
@@ -79,17 +80,9 @@ class CtrlReleasePoller:
         if not display_name:
             return None
 
-        lib_name = ctypes.util.find_library("X11") or "libX11.so.6"
-        x11 = ctypes.CDLL(lib_name)
-
-        x11.XOpenDisplay.argtypes = [ctypes.c_char_p]
-        x11.XOpenDisplay.restype = ctypes.c_void_p
-        x11.XCloseDisplay.argtypes = [ctypes.c_void_p]
-        x11.XCloseDisplay.restype = ctypes.c_int
-        x11.XQueryKeymap.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_ubyte)]
-        x11.XQueryKeymap.restype = ctypes.c_int
-        x11.XKeysymToKeycode.argtypes = [ctypes.c_void_p, ctypes.c_ulong]
-        x11.XKeysymToKeycode.restype = ctypes.c_ubyte
+        x11 = _get_x11()
+        if x11 is None:
+            return None
 
         display = x11.XOpenDisplay(None)
         if not display:
@@ -110,3 +103,32 @@ def _keycode_is_down(keymap, keycode: int) -> bool:
     byte_index = keycode // 8
     bit = keycode % 8
     return bool(keymap[byte_index] & (1 << bit))
+
+
+def _get_x11() -> Any | None:
+    global _X11
+    if _X11 is not None:
+        return _X11
+
+    lib_name = ctypes.util.find_library("X11") or "libX11.so.6"
+
+    try:
+        x11 = ctypes.CDLL(lib_name)
+    except OSError:
+        return None
+
+    x11.XOpenDisplay.argtypes = [ctypes.c_char_p]
+    x11.XOpenDisplay.restype = ctypes.c_void_p
+    x11.XCloseDisplay.argtypes = [ctypes.c_void_p]
+    x11.XCloseDisplay.restype = ctypes.c_int
+    x11.XQueryKeymap.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_ubyte)]
+    x11.XQueryKeymap.restype = ctypes.c_int
+    x11.XKeysymToKeycode.argtypes = [ctypes.c_void_p, ctypes.c_ulong]
+    x11.XKeysymToKeycode.restype = ctypes.c_ubyte
+    _X11 = x11
+    return x11
+
+
+def plugin_unloaded() -> None:
+    global _X11
+    _X11 = None

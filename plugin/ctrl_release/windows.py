@@ -7,6 +7,7 @@ from typing import Any
 from .._compat import sublime
 
 _VK_CONTROL = 0x11
+_USER32: Any | None = None
 
 
 class CtrlReleasePoller:
@@ -14,7 +15,7 @@ class CtrlReleasePoller:
         self._on_release = on_release
         self._interval_ms = interval_ms
         self._active = False
-        self._user32: Any = self._open_user32()
+        self._user32: Any = _get_user32()
 
     def start(self) -> None:
         if self._active:
@@ -48,11 +49,25 @@ class CtrlReleasePoller:
         return bool(self._user32.GetAsyncKeyState(_VK_CONTROL) & 0x8000)
 
     def _open_user32(self) -> Any | None:
-        try:
-            user32 = ctypes.CDLL("user32.dll")
-        except AttributeError, OSError:
-            return None
+        return _get_user32()
 
-        user32.GetAsyncKeyState.argtypes = [ctypes.c_int]
-        user32.GetAsyncKeyState.restype = ctypes.c_short
-        return user32
+
+def _get_user32() -> Any | None:
+    global _USER32
+    if _USER32 is not None:
+        return _USER32
+
+    try:
+        user32 = ctypes.CDLL("user32.dll")
+    except AttributeError, OSError:
+        return None
+
+    user32.GetAsyncKeyState.argtypes = [ctypes.c_int]
+    user32.GetAsyncKeyState.restype = ctypes.c_short
+    _USER32 = user32
+    return user32
+
+
+def plugin_unloaded() -> None:
+    global _USER32
+    _USER32 = None

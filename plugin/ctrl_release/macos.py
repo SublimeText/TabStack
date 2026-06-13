@@ -10,6 +10,7 @@ from .._compat import sublime
 _CG_EVENT_SOURCE_STATE_COMBINED_SESSION_STATE = 0
 _K_VK_CONTROL = 59
 _K_VK_RIGHT_CONTROL = 62
+_CORE_GRAPHICS: Any | None = None
 
 
 class CtrlReleasePoller:
@@ -17,7 +18,7 @@ class CtrlReleasePoller:
         self._on_release = on_release
         self._interval_ms = interval_ms
         self._active = False
-        self._core_graphics = self._open_core_graphics()
+        self._core_graphics = _get_core_graphics()
 
     def start(self) -> None:
         if self._active:
@@ -63,15 +64,29 @@ class CtrlReleasePoller:
         )
 
     def _open_core_graphics(self) -> Any | None:
-        lib_name = ctypes.util.find_library("CoreGraphics")
-        if lib_name is None:
-            lib_name = "/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics"
+        return _get_core_graphics()
 
-        try:
-            core_graphics = ctypes.CDLL(lib_name)
-        except OSError:
-            return None
 
-        core_graphics.CGEventSourceKeyState.argtypes = [ctypes.c_long, ctypes.c_uint32]
-        core_graphics.CGEventSourceKeyState.restype = ctypes.c_bool
-        return core_graphics
+def _get_core_graphics() -> Any | None:
+    global _CORE_GRAPHICS
+    if _CORE_GRAPHICS is not None:
+        return _CORE_GRAPHICS
+
+    lib_name = ctypes.util.find_library("CoreGraphics")
+    if lib_name is None:
+        lib_name = "/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics"
+
+    try:
+        core_graphics = ctypes.CDLL(lib_name)
+    except OSError:
+        return None
+
+    core_graphics.CGEventSourceKeyState.argtypes = [ctypes.c_long, ctypes.c_uint32]
+    core_graphics.CGEventSourceKeyState.restype = ctypes.c_bool
+    _CORE_GRAPHICS = core_graphics
+    return core_graphics
+
+
+def plugin_unloaded() -> None:
+    global _CORE_GRAPHICS
+    _CORE_GRAPHICS = None
