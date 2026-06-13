@@ -9,8 +9,6 @@ from .state import get_state, remove_view_from_all, remove_window_state
 
 class TabStackListener(sublime_plugin.EventListener):
     def on_activated(self, view) -> None:
-        if view is None:
-            return
         window = view.window()
         if window is None:
             return
@@ -49,17 +47,12 @@ class TabStackListener(sublime_plugin.EventListener):
         return None
 
     def on_close(self, view) -> None:
-        if view is None:
-            return
         remove_view_from_all(view.id())
         window = view.window()
         if window is not None and not window.views():
             remove_window_state(window.id())
 
     def on_pre_close(self, view) -> None:
-        if view is None:
-            return
-
         window = view.window()
         if window is None:
             return
