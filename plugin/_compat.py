@@ -6,6 +6,7 @@ try:
     import sublime  # type: ignore
     import sublime_plugin  # type: ignore
 except ImportError:  # pragma: no cover - used outside Sublime Text.
+
     class _Settings(dict):
         def get(self, key, default=None):
             return super().get(key, default)

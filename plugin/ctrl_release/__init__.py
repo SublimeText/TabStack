@@ -10,5 +10,5 @@ else:
     from .linux import CtrlReleasePoller
 
 __all__ = [
-    'CtrlReleasePoller',
+    "CtrlReleasePoller",
 ]

@@ -49,7 +49,7 @@ class CtrlReleasePoller:
     def _open_user32(self) -> Any | None:
         try:
             user32 = ctypes.CDLL("user32.dll")
-        except (AttributeError, OSError):
+        except AttributeError, OSError:
             return None
 
         user32.GetAsyncKeyState.argtypes = [ctypes.c_int]
