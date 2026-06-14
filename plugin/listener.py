@@ -57,6 +57,9 @@ class TabStackListener(sublime_plugin.EventListener):
             remove_window_state(window.id())
 
     def on_pre_close(self, view) -> None:
+        if view.is_transient():
+            return
+
         window = view.window()
         if window is None:
             return
