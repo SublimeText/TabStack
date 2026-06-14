@@ -134,7 +134,6 @@ def _show_panel(window, state, entries: list[_Entry]) -> None:
     window.show_quick_panel(
         items,
         on_select,
-        flags=sublime.KEEP_OPEN_ON_FOCUS_LOST,
         selected_index=state.session_selected_index,
         on_highlight=on_highlight,
         placeholder="Release ctrl to close; Hit ctrl+escape to abort",
