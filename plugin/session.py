@@ -6,9 +6,8 @@ from .state import TabStackWindowState
 
 
 def show_panel(window, state) -> None:
-    entries = state.session_entries
-    items = [entry.caption for entry in entries]
-    state.session_selected_index = min(len(items), 1)
+    items = [entry.caption for entry in state.session_entries]
+    state.session_selected_index = 1 if len(items) > 1 else 0
 
     def on_select(index: int) -> None:
         if index < 0:
@@ -18,7 +17,7 @@ def show_panel(window, state) -> None:
         _commit_session(window, state)
 
     def on_highlight(index: int) -> None:
-        if index < 0 or index >= len(entries):
+        if index < 0 or index >= len(state.session_entries):
             return
         state.session_selected_index = index
         preview_entry(window, state)
@@ -41,7 +40,9 @@ def show_panel(window, state) -> None:
 
 
 def preview_entry(window, state: TabStackWindowState) -> None:
-    if state.session_entries is None or len(state.session_entries) < state.session_selected_index:
+    if state.session_entries is None:
+        return
+    if not 0 <= state.session_selected_index < len(state.session_entries):
         return
     entry = state.session_entries[state.session_selected_index]
     apply_group_selection(window, entry.selection, state.session_group)

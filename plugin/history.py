@@ -117,9 +117,15 @@ def sync_selection_history(
 
     if prune_removed_sheets:
         for group_key, group_state_stack in list(groups.items()):
-            updated_stack = prune_history_stack_for_live_sheets(
-                window, int(group_key), group_state_stack
-            )
+            try:
+                group = int(group_key)
+            except (TypeError, ValueError):
+                # Unexpected/corrupt key; drop it to avoid crashing.
+                del groups[group_key]
+                changed = True
+                continue
+
+            updated_stack = prune_history_stack_for_live_sheets(window, group, group_state_stack)
             if updated_stack != group_state_stack:
                 changed = True
                 if updated_stack:
@@ -227,11 +233,10 @@ def prune_group_state(
 
 def prune_history_stack(
     group_state_stack: list[GroupSelectionState],
-    removed_identities: list[SheetIdentity] = [],
+    removed_identities: list[SheetIdentity] | None = None,
 ) -> list[GroupSelectionState]:
     updated_stack: list[GroupSelectionState] = []
-    seen_identities: list[SheetIdentity] = [*removed_identities]
-
+    seen_identities: list[SheetIdentity] = list(removed_identities or [])
     for group_state in group_state_stack:
         pruned_group_state = prune_group_state(
             group_state,
