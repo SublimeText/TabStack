@@ -6,9 +6,9 @@ It keeps tab order per window
 and previews tabs in the quick panel
 before committing the switch.
 It also preserves tab ordering across sessions
-by storing each view's last activation time.
+and supports multiple selections.
 When closing a tab,
-TabStack focuses the most recently used remaining tab.
+TabStack restores the previous selection.
 
 [Video Showcase][]
 
@@ -27,6 +27,7 @@ git clone https://github.com/FichteFoll/TabStack
 To update later, run `git pull` inside the `TabStack` directory
 and restart Sublime Text.
 
+
 ## Usage
 
 The key bindings are:
@@ -43,6 +44,7 @@ Press one of those shortcuts to open the tab stack quick panel.
 Use the same keys to move through the list while it is open.
 Release `ctrl` to commit the selected tab.
 Press `ctrl+escape` to cancel.
+
 
 ## Platform Support
 

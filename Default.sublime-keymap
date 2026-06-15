@@ -2,17 +2,21 @@
   {
     "keys": ["ctrl+tab"],
     "command": "show_tab_stack",
+    "args": {"forward": true},
     "context": [
-      {"key": "tab_stack.quick_panel", "operator": "equal", "operand": false},
-      {"key": "tab_stack.ctrl_release_available", "operator": "equal", "operand": true}
+      // This context cannot be evaluated on non-view sheets.
+      // Window settings cannot be queried via `settings.*` either.
+      // https://github.com/sublimehq/sublime_text/issues/5377
+      // {"key": "tab_stack.ctrl_release_available", "operator": "equal", "operand": true}
     ]
   },
+  // We just override this binding to prevent accidental presses of it.
   {
     "keys": ["ctrl+shift+tab"],
     "command": "show_tab_stack",
+    "args": {"forward": false},
     "context": [
-      {"key": "tab_stack.quick_panel", "operator": "equal", "operand": false},
-      {"key": "tab_stack.ctrl_release_available", "operator": "equal", "operand": true}
+      // {"key": "tab_stack.ctrl_release_available", "operator": "equal", "operand": true}
     ]
   },
   {
