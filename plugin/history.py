@@ -119,7 +119,7 @@ def sync_selection_history(
         for group_key, group_state_stack in list(groups.items()):
             try:
                 group = int(group_key)
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 # Unexpected/corrupt key; drop it to avoid crashing.
                 del groups[group_key]
                 changed = True

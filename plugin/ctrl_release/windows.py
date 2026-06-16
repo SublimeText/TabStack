@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ctypes
+import threading
 from collections.abc import Callable
 from typing import Any
 
@@ -11,39 +12,33 @@ _VK_CONTROL = 0x11
 _USER32: Any | None = None
 
 
-class CtrlReleasePoller:
+class CtrlReleasePoller(threading.Thread):
     def __init__(self, on_release: Callable[[], None], interval_ms: int) -> None:
+        super().__init__(daemon=True)
         self._on_release = on_release
         self._interval_ms = interval_ms
-        self._active = False
         self._user32: Any = _get_user32()
+        self._stop_event = threading.Event()
 
     def start(self) -> None:
-        if self._active:
+        if self.is_alive():
             return
-        self._active = True
-        self._schedule()
+        self._stop_event.clear()
+        super().start()
 
     def stop(self) -> None:
-        self._active = False
+        self._stop_event.set()
 
-    def _schedule(self) -> None:
-        if not self._active:
-            return
-        sublime.set_timeout_async(self._poll, self._interval_ms)
-
-    def _poll(self) -> None:
-        if not self._active:
-            return
-        if self._user32 is None or not self._ctrl_down():
-            self._fire_release()
-            return
-        self._schedule()
+    def run(self) -> None:
+        while not self._stop_event.wait(self._interval_ms / 1000):
+            if self._user32 is None or not self._ctrl_down():
+                self._fire_release()
+                break
 
     def _fire_release(self) -> None:
-        if not self._active:
+        if self._stop_event.is_set():
             return
-        self._active = False
+        self._stop_event.set()
         sublime.set_timeout(self._on_release)
 
     def _ctrl_down(self) -> bool:
