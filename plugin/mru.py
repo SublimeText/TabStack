@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .captions import caption_for_sheet_identities
+from .constants import TAB_HISTORY_LIMIT
 from .sheets import SheetIdentity, sheet_identity
 from .state import GroupSelectionState, SheetSelectionHistory
 
@@ -30,6 +31,8 @@ def collect_entries(window, history: SheetSelectionHistory) -> list[Entry]:
             seen_identities.update(_selection_identity_keys(group_state))
 
     for sheet in _non_transient_sheets_in_group(window, active_group):
+        if len(entries) >= TAB_HISTORY_LIMIT:
+            break
         identity = _identity_key(sheet_identity(sheet, window))
         if identity in seen_identities:
             continue

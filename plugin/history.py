@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, cast
 
 from ._compat import sublime
+from .constants import TAB_HISTORY_LIMIT
 from .sheets import SheetIdentity, find_sheet_by_identity_and_group, sheet_identity
 from .state import (
     GroupSelectionState,
@@ -238,6 +239,8 @@ def prune_history_stack(
     updated_stack: list[GroupSelectionState] = []
     seen_identities: list[SheetIdentity] = list(removed_identities or [])
     for group_state in group_state_stack:
+        if len(updated_stack) >= TAB_HISTORY_LIMIT:
+            break
         pruned_group_state = prune_group_state(
             group_state,
             seen_identities,
