@@ -26,6 +26,7 @@ class TabStackWindowState:
     session_selected_index: int = 0
     session_group: int = 0
     session_entries: Optional[list[Entry]] = None
+    session_panel_reopening: bool = False
     selection_poller: Any = None
     ctrl_release_poller: Any = None
 
@@ -35,6 +36,7 @@ class TabStackWindowState:
         self.session_selected_index = 0
         self.session_group = 0
         self.session_entries = None
+        self.session_panel_reopening = False
         if self.ctrl_release_poller is not None:
             self.ctrl_release_poller.stop()
             self.ctrl_release_poller = None

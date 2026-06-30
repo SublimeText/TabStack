@@ -17,10 +17,13 @@
 - Ctrl-release detection lives in `plugin/ctrl_release/`.
 - Uner Linux, Ctrl-release polling uses the X11 key state API, so Sublime must run under X11 or XWayland; a native Wayland session has no pollable global key state and Sublime exposes no key-release API.
 - `show_tab_stack` opens the quick panel, starts a Ctrl-release poller, and commits when Ctrl is released.
-- The quick-panel context key is `tab_stack.quick_panel`.
-- When `tab_stack.quick_panel` is `false`, `ctrl+tab` starts `show_tab_stack`. `ctrl+shift+tab` is bound as a no-op to prevent accidental presses.
- start `show_tab_stack`.
-- When `tab_stack.quick_panel` is `true`, `ctrl+tab`, `ctrl+shift+tab`, `ctrl+up`, and `ctrl+down` call `move`, and `ctrl+escape` calls `tab_stack_cancel`.
+- Wrap-around cycling is implemented by intentionally closing and reopening the quick panel at the opposite boundary.
+  That handoff keeps the session active and reuses the existing Ctrl-release poller.
+- `tab_stack.session_active` is the quick-panel session context key.
+- Boundary-only contexts are `tab_stack.quick_panel_at_top` and `tab_stack.quick_panel_at_bottom`.
+- When `tab_stack.session_active` is `false`, `ctrl+tab` starts `show_tab_stack`.
+  `ctrl+shift+tab` is bound as a no-op to prevent accidental presses.
+- When `tab_stack.session_active` is `true`, non-boundary `ctrl+tab`, `ctrl+shift+tab`, `ctrl+up`, and `ctrl+down` call `move`, boundary presses call `tab_stack_cycle`, and `ctrl+escape` calls `tab_stack_cancel`.
 
 ## Verification
 

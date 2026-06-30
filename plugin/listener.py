@@ -18,6 +18,23 @@ def _ensure_selection_poller(window, state) -> None:
         state.selection_poller.start()
 
 
+def _session_boundary_value(window, key: str) -> bool:
+    state = get_state(window)
+    if not state.session_active:
+        return False
+    if key == "tab_stack.session_active":
+        return True
+
+    entries = state.session_entries
+    if not entries or len(entries) < 2:
+        return False
+    if key == "tab_stack.quick_panel_at_top":
+        return state.session_selected_index == 0
+    if key == "tab_stack.quick_panel_at_bottom":
+        return state.session_selected_index == len(entries) - 1
+    return False
+
+
 class TabStackListener(sublime_plugin.EventListener):
     def on_activated(self, view) -> None:
         window = view.window()
@@ -34,7 +51,11 @@ class TabStackListener(sublime_plugin.EventListener):
     def on_query_context(self, view, key, operator, operand, match_all):
         if key == "tab_stack.ctrl_release_available":
             value = is_available()
-        elif key == "tab_stack.quick_panel":
+        elif key in {
+            "tab_stack.session_active",
+            "tab_stack.quick_panel_at_top",
+            "tab_stack.quick_panel_at_bottom",
+        }:
             if view is None:
                 return False
 
@@ -42,8 +63,7 @@ class TabStackListener(sublime_plugin.EventListener):
             if window is None:
                 return False
 
-            state = get_state(window)
-            value = state.session_active
+            value = _session_boundary_value(window, key)
         else:
             return None
 

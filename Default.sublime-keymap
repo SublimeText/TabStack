@@ -1,4 +1,5 @@
 [
+  // Initial Open //
   {
     "keys": ["ctrl+tab"],
     "command": "show_tab_stack",
@@ -19,12 +20,14 @@
       // {"key": "tab_stack.ctrl_release_available", "operator": "equal", "operand": true}
     ]
   },
+
+  // Stack Navigation //
   {
     "keys": ["ctrl+tab"],
     "command": "move",
     "args": {"by": "lines", "forward": true},
     "context": [
-      {"key": "tab_stack.quick_panel", "operator": "equal", "operand": true}
+      {"key": "tab_stack.session_active", "operator": "equal", "operand": true}
     ]
   },
   {
@@ -32,7 +35,7 @@
     "command": "move",
     "args": {"by": "lines", "forward": false},
     "context": [
-      {"key": "tab_stack.quick_panel", "operator": "equal", "operand": true}
+      {"key": "tab_stack.session_active", "operator": "equal", "operand": true}
     ]
   },
   {
@@ -40,7 +43,7 @@
     "command": "move",
     "args": {"by": "lines", "forward": false},
     "context": [
-      {"key": "tab_stack.quick_panel", "operator": "equal", "operand": true}
+      {"key": "tab_stack.session_active", "operator": "equal", "operand": true}
     ]
   },
   {
@@ -48,14 +51,53 @@
     "command": "move",
     "args": {"by": "lines", "forward": true},
     "context": [
-      {"key": "tab_stack.quick_panel", "operator": "equal", "operand": true}
+      {"key": "tab_stack.session_active", "operator": "equal", "operand": true}
     ]
   },
+
   {
     "keys": ["ctrl+escape"],
     "command": "tab_stack_cancel",
     "context": [
-      {"key": "tab_stack.quick_panel", "operator": "equal", "operand": true}
+      {"key": "tab_stack.session_active", "operator": "equal", "operand": true}
     ]
-  }
+  },
+
+  // Stack Cycling //
+  {
+    "keys": ["ctrl+tab"],
+    "command": "tab_stack_cycle",
+    "args": {"forward": true},
+    "context": [
+      {"key": "tab_stack.session_active", "operator": "equal", "operand": true},
+      {"key": "tab_stack.quick_panel_at_bottom", "operator": "equal", "operand": true}
+    ]
+  },
+  {
+    "keys": ["ctrl+shift+tab"],
+    "command": "tab_stack_cycle",
+    "args": {"forward": false},
+    "context": [
+      {"key": "tab_stack.session_active", "operator": "equal", "operand": true},
+      {"key": "tab_stack.quick_panel_at_top", "operator": "equal", "operand": true}
+    ]
+  },
+  {
+    "keys": ["ctrl+up"],
+    "command": "tab_stack_cycle",
+    "args": {"forward": false},
+    "context": [
+      {"key": "tab_stack.session_active", "operator": "equal", "operand": true},
+      {"key": "tab_stack.quick_panel_at_top", "operator": "equal", "operand": true}
+    ]
+  },
+  {
+    "keys": ["ctrl+down"],
+    "command": "tab_stack_cycle",
+    "args": {"forward": true},
+    "context": [
+      {"key": "tab_stack.session_active", "operator": "equal", "operand": true},
+      {"key": "tab_stack.quick_panel_at_bottom", "operator": "equal", "operand": true}
+    ]
+  },
 ]

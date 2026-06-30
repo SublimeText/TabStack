@@ -4,7 +4,7 @@ from ._compat import sublime_plugin
 from .ctrl_release import is_available
 from .history import current_group_selection_state, sync_selection_history
 from .mru import collect_entries
-from .session import cancel_session, show_panel
+from .session import cancel_session, reopen_panel_at_index, show_panel
 from .state import get_state
 
 
@@ -31,6 +31,7 @@ class ShowTabStackCommand(sublime_plugin.WindowCommand):
         state.session_active = True
         state.session_group = active_group
         state.session_entries = entries
+        state.session_selected_index = 1 if len(entries) > 1 else 0
         show_panel(window, state)
 
 
@@ -42,3 +43,18 @@ class TabStackCancelCommand(sublime_plugin.WindowCommand):
 
         state = get_state(window)
         cancel_session(window, state)
+
+
+class TabStackCycleCommand(sublime_plugin.WindowCommand):
+    def run(self, *, forward: bool) -> None:
+        window = self.window
+        if window is None:
+            return
+
+        state = get_state(window)
+        entries = state.session_entries
+        if not state.session_active or not entries or len(entries) < 2:
+            return
+
+        target_index = 0 if forward else len(entries) - 1
+        reopen_panel_at_index(window, state, target_index)

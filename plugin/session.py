@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+from ._compat import sublime
 from .ctrl_release import CtrlReleasePoller
 from .sheets import apply_group_selection
 from .state import TabStackWindowState
 
 
 def show_panel(window, state) -> None:
+    if not state.session_active or not state.session_entries:
+        return
+
     items = [entry.caption for entry in state.session_entries]
-    state.session_selected_index = 1 if len(items) > 1 else 0
 
     def on_select(index: int) -> None:
         if index < 0:
@@ -30,13 +33,12 @@ def show_panel(window, state) -> None:
         placeholder="Release ctrl to close; Hit ctrl+escape to abort",
     )
 
-    if state.ctrl_release_poller:
-        state.ctrl_release_poller.stop()
-    state.ctrl_release_poller = CtrlReleasePoller(
-        lambda: _commit_session(window, state),
-        25,
-    )
-    state.ctrl_release_poller.start()
+    if not state.ctrl_release_poller:
+        state.ctrl_release_poller = CtrlReleasePoller(
+            lambda: _commit_session(window, state),
+            25,
+        )
+        state.ctrl_release_poller.start()
 
 
 def preview_entry(window, state: TabStackWindowState) -> None:
@@ -82,5 +84,23 @@ def clamp_index(index: int, size: int) -> int:
     return max(0, min(index, size - 1))
 
 
+def reopen_panel_at_index(window, state: TabStackWindowState, index: int) -> None:
+    if not state.session_active or state.session_panel_reopening:
+        return
+
+    entries = state.session_entries
+    if not entries or len(entries) < 2:
+        return
+
+    state.session_selected_index = clamp_index(index, len(entries))
+    state.session_panel_reopening = True
+    window.run_command("hide_overlay", {"cancel": True})
+    sublime.set_timeout(lambda: show_panel(window, state), 0)
+
+
 def handle_panel_closed(window, state) -> None:
+    if state.session_panel_reopening:
+        state.session_panel_reopening = False
+        return
+
     cancel_session(window, state)
