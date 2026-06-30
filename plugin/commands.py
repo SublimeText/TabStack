@@ -8,7 +8,7 @@ from .session import cancel_session, reopen_panel_at_index, show_panel
 from .state import get_state
 
 
-class ShowTabStackCommand(sublime_plugin.WindowCommand):
+class TabStackOpenCommand(sublime_plugin.WindowCommand):
     def run(self, *, forward=True) -> None:
         window = self.window
         if window is None:

@@ -2,7 +2,7 @@
   // Initial Open //
   {
     "keys": ["ctrl+tab"],
-    "command": "show_tab_stack",
+    "command": "tab_stack_open",
     "args": {"forward": true},
     "context": [
       // This context cannot be evaluated on non-view sheets.
@@ -14,7 +14,7 @@
   // We just override this binding to prevent accidental presses of it.
   {
     "keys": ["ctrl+shift+tab"],
-    "command": "show_tab_stack",
+    "command": "tab_stack_open",
     "args": {"forward": false},
     "context": [
       // {"key": "tab_stack.ctrl_release_available", "operator": "equal", "operand": true}
