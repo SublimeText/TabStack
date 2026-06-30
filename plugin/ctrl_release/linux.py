@@ -6,17 +6,17 @@ import os
 import threading
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from .._compat import sublime
 from ._availability import set_unavailable
 
 _XK_Control_L = 0xFFE3
 _XK_Control_R = 0xFFE4
-_X11: Any | None = None
+_X11: Optional[Any] = None
 
 
-@dataclass(slots=True)
+@dataclass
 class _X11State:
     display: int
     keycode_left: int
@@ -73,7 +73,7 @@ class CtrlReleasePoller(threading.Thread):
             state.keycode_right,
         )
 
-    def _open_x11_state(self) -> _X11State | None:
+    def _open_x11_state(self) -> Optional[_X11State]:
         display_name = os.environ.get("DISPLAY")
         if not display_name:
             return None
@@ -107,7 +107,7 @@ def _keycode_is_down(keymap, keycode: int) -> bool:
     return bool(keymap[byte_index] & (1 << bit))
 
 
-def _get_x11() -> Any | None:
+def _get_x11() -> Optional[Any]:
     global _X11
     if _X11 is not None:
         return _X11

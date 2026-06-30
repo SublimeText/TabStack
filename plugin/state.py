@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, TypedDict
+from typing import TYPE_CHECKING, Any, Optional, TypedDict
 
 from .sheets import SheetIdentity
 
@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 
 class GroupSelectionState(TypedDict):
-    active_sheet_index: int | None
+    active_sheet_index: Optional[int]
     selected_sheets: list[SheetIdentity]
 
 
@@ -19,13 +19,13 @@ class SheetSelectionHistory(TypedDict):
     groups: dict[str, list[GroupSelectionState]]
 
 
-@dataclass(slots=True)
+@dataclass
 class TabStackWindowState:
     session_active: bool = False
-    session_origin_selection: GroupSelectionState | None = None
+    session_origin_selection: Optional[GroupSelectionState] = None
     session_selected_index: int = 0
     session_group: int = 0
-    session_entries: list[Entry] | None = None
+    session_entries: Optional[list[Entry]] = None
     selection_poller: Any = None
     ctrl_release_poller: Any = None
 

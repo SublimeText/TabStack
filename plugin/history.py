@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any, Optional, cast
 
 from ._compat import sublime
 from .constants import TAB_HISTORY_LIMIT
@@ -44,7 +44,7 @@ class SelectionHistoryPoller:
         self._schedule()
 
 
-def current_group_selection_state(window, group: int) -> GroupSelectionState | None:
+def current_group_selection_state(window, group: int) -> Optional[GroupSelectionState]:
     selected_sheets = list(window.selected_sheets_in_group(group))
     selected_identities = [
         sheet_identity(sheet, window) for sheet in selected_sheets if sheet.group() is not None
@@ -120,7 +120,7 @@ def sync_selection_history(
         for group_key, group_state_stack in list(groups.items()):
             try:
                 group = int(group_key)
-            except TypeError, ValueError:
+            except (TypeError, ValueError):
                 # Unexpected/corrupt key; drop it to avoid crashing.
                 del groups[group_key]
                 changed = True
@@ -175,7 +175,7 @@ def prune_group_state_for_live_sheets(
     window,
     group: int,
     group_state: GroupSelectionState,
-) -> GroupSelectionState | None:
+) -> Optional[GroupSelectionState]:
     selected_sheets = [
         identity
         for identity in group_state["selected_sheets"]
@@ -195,10 +195,10 @@ def prune_group_state_for_live_sheets(
 
 
 def prune_active_sheet_index(
-    active_sheet_index: int | None,
+    active_sheet_index: Optional[int],
     original_selected_sheets: list[SheetIdentity],
     pruned_selected_sheets: list[SheetIdentity],
-) -> int | None:
+) -> Optional[int]:
     if active_sheet_index is None:
         return None
     if active_sheet_index < 0 or active_sheet_index >= len(original_selected_sheets):
@@ -214,7 +214,7 @@ def prune_active_sheet_index(
 def prune_group_state(
     group_state: GroupSelectionState,
     seen_identities: list[SheetIdentity],
-) -> GroupSelectionState | None:
+) -> Optional[GroupSelectionState]:
     selected_sheets = [
         identity for identity in group_state["selected_sheets"] if identity not in seen_identities
     ]
@@ -234,7 +234,7 @@ def prune_group_state(
 
 def prune_history_stack(
     group_state_stack: list[GroupSelectionState],
-    removed_identities: list[SheetIdentity] | None = None,
+    removed_identities: Optional[list[SheetIdentity]] = None,
 ) -> list[GroupSelectionState]:
     updated_stack: list[GroupSelectionState] = []
     seen_identities: list[SheetIdentity] = list(removed_identities or [])

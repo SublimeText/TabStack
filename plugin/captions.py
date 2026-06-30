@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 def caption_for_sheet_identities(identities, window) -> list[str]:
-    titles = [identity["name"] for identity in identities]
+    titles = [identity["name"] or _title_from_path(identity["path"]) for identity in identities]
     paths = [
         _relative_path(identity["path"], window) for identity in identities if identity["path"]
     ]
@@ -14,6 +14,12 @@ def caption_for_sheet_identities(identities, window) -> list[str]:
 
 def _title_from_sheet(sheet) -> str:
     file_name = sheet.file_name()
+    if file_name:
+        return Path(file_name).name
+    return "Untitled"
+
+
+def _title_from_path(file_name: str | None) -> str:
     if file_name:
         return Path(file_name).name
     return "Untitled"

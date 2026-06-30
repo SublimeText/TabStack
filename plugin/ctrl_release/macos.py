@@ -4,7 +4,7 @@ import ctypes
 import ctypes.util
 import threading
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Optional
 
 from .._compat import sublime
 from ._availability import set_unavailable
@@ -12,7 +12,7 @@ from ._availability import set_unavailable
 _CG_EVENT_SOURCE_STATE_COMBINED_SESSION_STATE = 0
 _K_VK_CONTROL = 59
 _K_VK_RIGHT_CONTROL = 62
-_CORE_GRAPHICS: Any | None = None
+_CORE_GRAPHICS: Optional[Any] = None
 
 
 class CtrlReleasePoller(threading.Thread):
@@ -59,7 +59,7 @@ class CtrlReleasePoller(threading.Thread):
             )
         )
 
-    def _open_core_graphics(self) -> Any | None:
+    def _open_core_graphics(self) -> Optional[Any]:
         return _get_core_graphics()
 
 
@@ -67,7 +67,7 @@ def probe() -> bool:
     return _get_core_graphics() is not None
 
 
-def _get_core_graphics() -> Any | None:
+def _get_core_graphics() -> Optional[Any]:
     global _CORE_GRAPHICS
     if _CORE_GRAPHICS is not None:
         return _CORE_GRAPHICS

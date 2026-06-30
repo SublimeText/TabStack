@@ -3,13 +3,13 @@ from __future__ import annotations
 import ctypes
 import threading
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Optional
 
 from .._compat import sublime
 from ._availability import set_unavailable
 
 _VK_CONTROL = 0x11
-_USER32: Any | None = None
+_USER32: Optional[Any] = None
 
 
 class CtrlReleasePoller(threading.Thread):
@@ -44,7 +44,7 @@ class CtrlReleasePoller(threading.Thread):
     def _ctrl_down(self) -> bool:
         return bool(self._user32.GetAsyncKeyState(_VK_CONTROL) & 0x8000)
 
-    def _open_user32(self) -> Any | None:
+    def _open_user32(self) -> Optional[Any]:
         return _get_user32()
 
 
@@ -52,7 +52,7 @@ def probe() -> bool:
     return _get_user32() is not None
 
 
-def _get_user32() -> Any | None:
+def _get_user32() -> Optional[Any]:
     global _USER32
     if _USER32 is not None:
         return _USER32

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Optional
 
 from .captions import caption_for_sheet_identities
 from .constants import TAB_HISTORY_LIMIT
@@ -8,7 +9,7 @@ from .sheets import SheetIdentity, sheet_identity
 from .state import GroupSelectionState, SheetSelectionHistory
 
 
-@dataclass(slots=True)
+@dataclass
 class Entry:
     selection: GroupSelectionState
     caption: list[str]
@@ -17,7 +18,7 @@ class Entry:
 def collect_entries(window, history: SheetSelectionHistory) -> list[Entry]:
     entries: list[Entry] = []
     active_group = window.active_group()
-    seen_identities: set[tuple[str, int, str | None, str | None]] = set()
+    seen_identities: set[tuple[Optional[str], int, Optional[str], Optional[str]]] = set()
 
     group_state_stack = history["groups"].get(str(active_group))
     if group_state_stack:
@@ -60,11 +61,13 @@ def _non_transient_sheets_in_group(window, group: int):
 
 def _selection_identity_keys(
     selection: GroupSelectionState,
-) -> set[tuple[str, int, str | None, str | None]]:
+) -> set[tuple[Optional[str], int, Optional[str], Optional[str]]]:
     return {_identity_key(identity) for identity in selection["selected_sheets"]}
 
 
-def _identity_key(identity: SheetIdentity) -> tuple[str, int, str | None, str | None]:
+def _identity_key(
+    identity: SheetIdentity,
+) -> tuple[Optional[str], int, Optional[str], Optional[str]]:
     return (
         identity["name"],
         identity["occurrence"],

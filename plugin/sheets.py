@@ -1,20 +1,22 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING, Optional, TypedDict
 
 if TYPE_CHECKING:
     from .state import GroupSelectionState
 
 
 class SheetIdentity(TypedDict):
-    name: str
+    name: Optional[str]
+    """The sheet name is `None` on ST builds <4205
+    because the required API method does not exist there."""
     occurrence: int
-    kind: str | None
-    path: str | None
+    kind: Optional[str]
+    path: Optional[str]
 
 
-def active_sheet_identity(window) -> SheetIdentity | None:
+def active_sheet_identity(window) -> Optional[SheetIdentity]:
     sheet = window.active_sheet()
     if sheet is None:
         return None
@@ -25,7 +27,7 @@ def find_sheet_by_identity_and_group(window, identity: SheetIdentity, group: int
     matching = [
         sheet
         for sheet in window.sheets_in_group(group)
-        if (sheet.name() or sheet_title(sheet)) == identity["name"]
+        if sheet_name(sheet) == identity["name"]
         and type(sheet).__name__ == identity["kind"]
         and sheet.file_name() == identity["path"]
     ]
@@ -37,7 +39,7 @@ def find_sheet_by_identity_and_group(window, identity: SheetIdentity, group: int
 
 def sheet_identity(sheet, window) -> SheetIdentity:
     return {
-        "name": sheet.name() or sheet_title(sheet),
+        "name": sheet_name(sheet),
         "occurrence": sheet_occurrence(sheet, window),
         "kind": type(sheet).__name__,
         "path": sheet.file_name(),
@@ -48,14 +50,14 @@ def sheet_occurrence(sheet, window) -> int:
     group = sheet.group()
     if group is None:
         return 0
-    name = sheet.name() or sheet_title(sheet)
+    name = sheet_name(sheet)
     kind = type(sheet).__name__
     path = sheet.file_name()
 
     matching_sheet_ids = [
         candidate.id()
         for candidate in window.sheets_in_group(group)
-        if (candidate.name() or sheet_title(candidate)) == name
+        if sheet_name(candidate) == name
         and type(candidate).__name__ == kind
         and candidate.file_name() == path
     ]
@@ -70,6 +72,11 @@ def sheet_title(sheet) -> str:
     if file_name:
         return Path(file_name).name
     return "Untitled"
+
+
+def sheet_name(sheet) -> Optional[str]:
+    get_name = getattr(sheet, "name", None)
+    return get_name() if get_name else None
 
 
 def find_live_sheets(window, identities: list[SheetIdentity], group: int) -> list[object]:

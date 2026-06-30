@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Optional
 
-_AVAILABLE: bool | None = None
+_AVAILABLE: Optional[bool] = None
 
 
 def set_unavailable() -> None:

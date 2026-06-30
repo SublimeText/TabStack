@@ -1,6 +1,6 @@
 # TabStack
 
-TabStack is a [Sublime Text][] (build 4205+) package
+TabStack is a [Sublime Text][] (build 4100+) package
 for switching between open tabs using an MRU-style stack.
 It keeps tab order per window
 and previews tabs in the quick panel
