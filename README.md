@@ -52,7 +52,16 @@ Note that this has not been reported to work yet.
 A native Wayland session exposes no way to poll global key state
 (a deliberate security restriction in the protocol),
 and Sublime Text does not provide a key-release API to plugins.
-See also the related [upstream issue][]
+See also the related [upstream issue][].
+
+
+## Caveats
+
+Support for sheets that are not backed by text,
+i.e. HTML sheets and image sheets,
+cannot properly be monitored before ST build 4205
+due to missing API support.
+
 
 [Sublime Text]: https://www.sublimetext.com/
 [Video Showcase]: https://raw.githubusercontent.com/SublimeText/TabStack/refs/heads/main/media/showcase.mp4
