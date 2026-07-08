@@ -52,12 +52,13 @@ TabStack supports **Linux, Windows, and macOS**.
 It polls the native key state APIs to detect modifier release events.
 
 On Linux, detection uses the X11 key state API,
-so Sublime must run under X11 or XWayland.
+so Sublime must run under X11 or XWayland
+(for example with `GDK_BACKEND=x11`).
+Note that this has not been reported to work yet.
+
 A native Wayland session exposes no way to poll global key state
 (a deliberate security restriction in the protocol),
-and Sublime provides no key-release API to plugins,
-so on Wayland run Sublime under XWayland
-(for example with `GDK_BACKEND=x11`).
+and Sublime Text does not provide a key-release API to plugins.
 See also the related [upstream issue][]
 
 [Sublime Text]: https://www.sublimetext.com/
