@@ -55,6 +55,6 @@ and Sublime Text does not provide a key-release API to plugins.
 See also the related [upstream issue][]
 
 [Sublime Text]: https://www.sublimetext.com/
-[Video Showcase]: https://raw.githubusercontent.com/FichteFoll/TabStack/refs/heads/main/media/showcase.mp4
+[Video Showcase]: https://raw.githubusercontent.com/SublimeText/TabStack/refs/heads/main/media/showcase.mp4
 [Package Control]: https://packages.sublimetext.com/
 [upstream issue]: https://github.com/sublimehq/sublime_text/issues/6931
