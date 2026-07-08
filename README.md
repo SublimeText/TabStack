@@ -15,17 +15,10 @@ TabStack restores the previous selection.
 
 ## Installation
 
-TabStack is not available on Package Control yet.
-To install it manually with git,
-first locate your Packages folder (*Preferences > Browse Packages...*)
-and then clone the repository into that folder:
-
-```bash
-git clone https://github.com/FichteFoll/TabStack
-```
-
-To update later, run `git pull` inside the `TabStack` directory
-and restart Sublime Text.
+TabStack is available on [Package Control][].
+Open the Command Palette,
+select `Package Control: Install Package`
+and find "TabStack" in the list.
 
 
 ## Usage
@@ -63,4 +56,5 @@ See also the related [upstream issue][]
 
 [Sublime Text]: https://www.sublimetext.com/
 [Video Showcase]: https://raw.githubusercontent.com/FichteFoll/TabStack/refs/heads/main/media/showcase.mp4
+[Package Control]: https://packages.sublimetext.com/
 [upstream issue]: https://github.com/sublimehq/sublime_text/issues/6931
