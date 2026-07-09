@@ -4,12 +4,18 @@ from ._compat import sublime_plugin
 from .ctrl_release import is_available
 from .history import current_group_selection_state, sync_selection_history
 from .mru import collect_entries
-from .session import cancel_session, reopen_panel_at_index, show_panel
+from .session import (
+    cancel_session,
+    preview_entry,
+    reopen_panel_at_index,
+    schedule_panel,
+    show_panel,
+)
 from .state import get_state
 
 
 class TabStackOpenCommand(sublime_plugin.WindowCommand):
-    def run(self, *, forward=True) -> None:
+    def run(self, *, forward=True, selected_index: int = 1) -> None:
         window = self.window
         if window is None:
             return
@@ -21,6 +27,16 @@ class TabStackOpenCommand(sublime_plugin.WindowCommand):
             return
 
         state = get_state(window)
+
+        if state.session_pending:
+            state.session_pending = False
+            state.session_pending_token += 1
+            state.session_active = True
+            state.session_selected_index = selected_index
+            preview_entry(window, state)
+            show_panel(window, state)
+            return
+
         active_group = window.active_group()
         state.session_origin_selection = current_group_selection_state(window, active_group)
         history = sync_selection_history(window, prune_removed_sheets=True)
@@ -28,11 +44,13 @@ class TabStackOpenCommand(sublime_plugin.WindowCommand):
         if not entries:
             return
 
-        state.session_active = True
+        state.session_pending = True
+        state.session_pending_token += 1
         state.session_group = active_group
         state.session_entries = entries
-        state.session_selected_index = 1 if len(entries) > 1 else 0
-        show_panel(window, state)
+        state.session_selected_index = selected_index
+        preview_entry(window, state)
+        schedule_panel(window, state, token=state.session_pending_token)
 
 
 class TabStackCancelCommand(sublime_plugin.WindowCommand):

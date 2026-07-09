@@ -59,6 +59,9 @@ class CtrlReleasePoller(threading.Thread):
             )
         )
 
+    def is_ctrl_down(self) -> bool:
+        return self._ctrl_down()
+
     def _open_core_graphics(self) -> Optional[Any]:
         return _get_core_graphics()
 

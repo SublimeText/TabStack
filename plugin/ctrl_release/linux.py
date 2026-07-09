@@ -73,6 +73,9 @@ class CtrlReleasePoller(threading.Thread):
             state.keycode_right,
         )
 
+    def is_ctrl_down(self) -> bool:
+        return self._ctrl_down()
+
     def _open_x11_state(self) -> Optional[_X11State]:
         display_name = os.environ.get("DISPLAY")
         if not display_name:

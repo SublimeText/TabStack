@@ -44,6 +44,9 @@ class CtrlReleasePoller(threading.Thread):
     def _ctrl_down(self) -> bool:
         return bool(self._user32.GetAsyncKeyState(_VK_CONTROL) & 0x8000)
 
+    def is_ctrl_down(self) -> bool:
+        return self._ctrl_down()
+
     def _open_user32(self) -> Optional[Any]:
         return _get_user32()
 
