@@ -4,13 +4,7 @@ from ._compat import sublime_plugin
 from .ctrl_release import is_available
 from .history import current_group_selection_state, sync_selection_history
 from .mru import collect_entries
-from .session import (
-    cancel_session,
-    preview_entry,
-    reopen_panel_at_index,
-    schedule_panel,
-    show_panel,
-)
+from .session import cancel_session, reopen_panel_at_index, schedule_panel, show_panel
 from .state import get_state
 
 
@@ -33,7 +27,6 @@ class TabStackOpenCommand(sublime_plugin.WindowCommand):
             state.session_pending_token += 1
             state.session_active = True
             state.session_selected_index = selected_index
-            preview_entry(window, state)
             show_panel(window, state)
             return
 
@@ -49,7 +42,6 @@ class TabStackOpenCommand(sublime_plugin.WindowCommand):
         state.session_group = active_group
         state.session_entries = entries
         state.session_selected_index = selected_index
-        preview_entry(window, state)
         schedule_panel(window, state, token=state.session_pending_token)
 
 

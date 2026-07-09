@@ -16,7 +16,7 @@ def _ensure_ctrl_release_poller(window, state) -> None:
         if state.session_active:
             _commit_session(window, state)
         elif state.session_pending:
-            state.clear_session()
+            _commit_pending_session(window, state)
 
     state.ctrl_release_poller = CtrlReleasePoller(on_release, 25)
     state.ctrl_release_poller.start()
@@ -75,6 +75,18 @@ def preview_entry(window, state: TabStackWindowState) -> None:
         return
     entry = state.session_entries[state.session_selected_index]
     apply_group_selection(window, entry.selection, state.session_group)
+
+
+def _commit_pending_session(window, state) -> None:
+    entries = state.session_entries
+    if not entries:
+        state.clear_session()
+        return
+
+    index = clamp_index(state.session_selected_index, len(entries))
+    selection = entries[index].selection
+    apply_group_selection(window, selection, state.session_group)
+    state.clear_session()
 
 
 def _commit_session(window, state) -> None:
