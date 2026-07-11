@@ -20,10 +20,12 @@ def _ensure_selection_poller(window, state) -> None:
 
 def _session_boundary_value(window, key: str) -> bool:
     state = get_state(window)
+    if key == "tab_stack.session_pending":
+        return state.session_pending
     if not state.session_active:
         return False
     if key == "tab_stack.session_active":
-        return True
+        return state.session_active
 
     entries = state.session_entries
     if not entries or len(entries) < 2:
@@ -47,7 +49,7 @@ class TabStackListener(sublime_plugin.EventListener):
             state.overlay_depth += 1
             return
 
-        if state.session_active or state.overlay_active:
+        if state.session_active or state.session_pending or state.overlay_active:
             return
 
         _ensure_selection_poller(window, state)
@@ -69,6 +71,7 @@ class TabStackListener(sublime_plugin.EventListener):
             value = is_available()
         elif key in {
             "tab_stack.session_active",
+            "tab_stack.session_pending",
             "tab_stack.quick_panel_at_top",
             "tab_stack.quick_panel_at_bottom",
         }:

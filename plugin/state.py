@@ -22,6 +22,9 @@ class SheetSelectionHistory(TypedDict):
 @dataclass
 class TabStackWindowState:
     session_active: bool = False
+    session_pending: bool = False
+    session_pending_token: int = 0
+    """Monotonically incremented token to track and implicitly cancel set_timeout callbacks."""
     session_origin_selection: Optional[GroupSelectionState] = None
     session_selected_index: int = 0
     session_group: int = 0
@@ -43,11 +46,13 @@ class TabStackWindowState:
 
     def clear_session(self) -> None:
         self.session_active = False
+        self.session_pending = False
         self.session_origin_selection = None
         self.session_selected_index = 0
         self.session_group = 0
         self.session_entries = None
         self.session_panel_reopening = False
+        self.session_pending_token += 1
         if self.ctrl_release_poller is not None:
             self.ctrl_release_poller.stop()
             self.ctrl_release_poller = None

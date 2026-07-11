@@ -5,6 +5,22 @@ from .ctrl_release import CtrlReleasePoller
 from .sheets import apply_group_selection
 from .state import TabStackWindowState
 
+SHOW_PANEL_DELAY_MS = 150
+
+
+def _ensure_ctrl_release_poller(window, state) -> None:
+    if state.ctrl_release_poller:
+        return
+
+    def on_release() -> None:
+        if state.session_active:
+            _commit_session(window, state)
+        elif state.session_pending:
+            _commit_pending_session(window, state)
+
+    state.ctrl_release_poller = CtrlReleasePoller(on_release, 25)
+    state.ctrl_release_poller.start()
+
 
 def show_panel(window, state) -> None:
     if not state.session_active or not state.session_entries:
@@ -33,12 +49,23 @@ def show_panel(window, state) -> None:
         placeholder="Release ctrl to close; Hit ctrl+escape to abort",
     )
 
-    if not state.ctrl_release_poller:
-        state.ctrl_release_poller = CtrlReleasePoller(
-            lambda: _commit_session(window, state),
-            25,
-        )
-        state.ctrl_release_poller.start()
+    _ensure_ctrl_release_poller(window, state)
+
+
+def schedule_panel(window, state, *, token: int) -> None:
+    _ensure_ctrl_release_poller(window, state)
+
+    def open_if_still_pending() -> None:
+        if not state.session_pending or state.session_pending_token != token:
+            return
+        if state.ctrl_release_poller is not None and not state.ctrl_release_poller.is_ctrl_down():
+            state.clear_session()
+            return
+        state.session_active = True
+        state.session_pending = False
+        show_panel(window, state)
+
+    sublime.set_timeout(open_if_still_pending, SHOW_PANEL_DELAY_MS)
 
 
 def preview_entry(window, state: TabStackWindowState) -> None:
@@ -48,6 +75,18 @@ def preview_entry(window, state: TabStackWindowState) -> None:
         return
     entry = state.session_entries[state.session_selected_index]
     apply_group_selection(window, entry.selection, state.session_group)
+
+
+def _commit_pending_session(window, state) -> None:
+    entries = state.session_entries
+    if not entries:
+        state.clear_session()
+        return
+
+    index = clamp_index(state.session_selected_index, len(entries))
+    selection = entries[index].selection
+    apply_group_selection(window, selection, state.session_group)
+    state.clear_session()
 
 
 def _commit_session(window, state) -> None:
@@ -71,6 +110,9 @@ def _commit_session(window, state) -> None:
 
 def cancel_session(window, state) -> None:
     if not state.session_active:
+        if not state.session_pending:
+            return
+        state.clear_session()
         return
 
     origin = state.session_origin_selection

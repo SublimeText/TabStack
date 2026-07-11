@@ -3,12 +3,22 @@
   {
     "keys": ["ctrl+tab"],
     "command": "tab_stack_open",
-    "args": {"forward": true},
+    "args": {"forward": true, "selected_index": 1},
     "context": [
+      {"key": "tab_stack.session_active", "operator": "equal", "operand": false},
+      {"key": "tab_stack.session_pending", "operator": "equal", "operand": false},
       // This context cannot be evaluated on non-view sheets.
       // Window settings cannot be queried via `settings.*` either.
       // https://github.com/sublimehq/sublime_text/issues/5377
       // {"key": "tab_stack.ctrl_release_available", "operator": "equal", "operand": true}
+    ]
+  },
+  {
+    "keys": ["ctrl+tab"],
+    "command": "tab_stack_open",
+    "args": {"forward": true, "selected_index": 2},
+    "context": [
+      {"key": "tab_stack.session_pending", "operator": "equal", "operand": true}
     ]
   },
   // We just override this binding to prevent accidental presses of it.
