@@ -32,6 +32,9 @@ class CtrlReleasePoller(threading.Thread):
         self._interval_ms = interval_ms
         self._state = self._open_x11_state()
         self._stop_event = threading.Event()
+        # libX11 is not thread-safe; serialize all access to the shared Display
+        # between the poller thread and the main thread (is_ctrl_down).
+        self._display_lock = threading.Lock()
 
     def start(self) -> None:
         if self.is_alive():
@@ -52,9 +55,10 @@ class CtrlReleasePoller(threading.Thread):
             self._close_state()
 
     def _close_state(self) -> None:
-        if self._state is not None:
-            self._state.xclose_display(self._state.display)
-            self._state = None
+        with self._display_lock:
+            if self._state is not None:
+                self._state.xclose_display(self._state.display)
+                self._state = None
 
     def _fire_release(self) -> None:
         if self._stop_event.is_set():
@@ -63,14 +67,17 @@ class CtrlReleasePoller(threading.Thread):
         sublime.set_timeout(self._on_release)
 
     def _ctrl_down(self) -> bool:
-        state = self._state
-        if state is None:
-            return False
         keymap = (ctypes.c_ubyte * 32)()
-        state.xquery_keymap(state.display, keymap)
-        return _keycode_is_down(keymap, state.keycode_left) or _keycode_is_down(
+        with self._display_lock:
+            state = self._state
+            if state is None:
+                return False
+            state.xquery_keymap(state.display, keymap)
+            keycode_left = state.keycode_left
+            keycode_right = state.keycode_right
+        return _keycode_is_down(keymap, keycode_left) or _keycode_is_down(
             keymap,
-            state.keycode_right,
+            keycode_right,
         )
 
     def is_ctrl_down(self) -> bool:
