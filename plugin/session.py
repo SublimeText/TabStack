@@ -26,7 +26,10 @@ def show_panel(window, state) -> None:
     if not state.session_active or not state.session_entries:
         return
 
-    items = [entry.caption for entry in state.session_entries]
+    items = [
+        sublime.QuickPanelItem(trigger=entry.caption[0], details=entry.caption[1])
+        for entry in state.session_entries
+    ]
 
     def on_select(index: int) -> None:
         if index < 0:
