@@ -8,6 +8,7 @@ requires-python = ">=3.8"
 dev = [
   "ruff",
   "ty",
+  "sublime-text-stubs==1.4200.0b1",
 ]
 
 [tool.ruff]

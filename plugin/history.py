@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Optional, cast
 
-from ._compat import sublime
+import sublime
+
 from .constants import TAB_HISTORY_LIMIT
 from .sheets import SheetIdentity, find_sheet_by_identity_and_group, sheet_identity
 from .state import (

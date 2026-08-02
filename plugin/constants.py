@@ -1,4 +1,4 @@
-from ._compat import sublime
+import sublime
 
 TAB_HISTORY_LIMIT = 20
 

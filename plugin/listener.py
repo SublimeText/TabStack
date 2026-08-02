@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from ._compat import sublime, sublime_plugin
+import sublime
+import sublime_plugin
+
 from .ctrl_release import is_available
 from .history import (
     SelectionHistoryPoller,

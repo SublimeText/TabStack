@@ -5,7 +5,8 @@ import threading
 from collections.abc import Callable
 from typing import Any, Optional
 
-from .._compat import sublime
+import sublime
+
 from ._availability import set_unavailable
 
 _VK_CONTROL = 0x11

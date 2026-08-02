@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from ._compat import sublime_plugin
+import sublime_plugin
+
 from .ctrl_release import is_available
 from .history import current_group_selection_state, sync_selection_history
 from .mru import collect_entries

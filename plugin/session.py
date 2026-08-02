@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from ._compat import sublime
+import sublime
+
 from .constants import KIND_MODIFIED
 from .ctrl_release import CtrlReleasePoller
 from .sheets import apply_group_selection

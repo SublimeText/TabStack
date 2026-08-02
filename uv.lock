@@ -28,6 +28,15 @@ wheels = [
 ]
 
 [[package]]
+name = "sublime-text-stubs"
+version = "1.4200.0b1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/16/d7/8db77b7bb6473a001cfffbc4ee340197801c256c5731ceee91f9a34a3b9b/sublime_text_stubs-1.4200.0b1.tar.gz", hash = "sha256:79a84e1cfa373bcf0f822bd0b36db4c517abbe0729e50c50a77e839ba754103d", size = 55761, upload-time = "2026-08-02T15:55:13.02Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4e/bf/cf6637761e7527e52f68a3d7865a09b8678bfb11e0ab8ce6f633c2775fe1/sublime_text_stubs-1.4200.0b1-py3-none-any.whl", hash = "sha256:56965fd12d16284afa36df3eac06a495c1ca58a61f6f4052dc0bd44eeece355b", size = 33850, upload-time = "2026-08-02T15:55:11.981Z" },
+]
+
+[[package]]
 name = "tab-stack"
 version = "0.1.0"
 source = { virtual = "." }
@@ -35,6 +44,7 @@ source = { virtual = "." }
 [package.dev-dependencies]
 dev = [
     { name = "ruff" },
+    { name = "sublime-text-stubs" },
     { name = "ty" },
 ]
 
@@ -43,6 +53,7 @@ dev = [
 [package.metadata.requires-dev]
 dev = [
     { name = "ruff" },
+    { name = "sublime-text-stubs", specifier = "==1.4200.0b1" },
     { name = "ty" },
 ]
 

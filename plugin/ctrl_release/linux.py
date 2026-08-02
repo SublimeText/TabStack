@@ -8,7 +8,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from .._compat import sublime
+import sublime
+
 from ._availability import set_unavailable
 
 _XK_Control_L = 0xFFE3

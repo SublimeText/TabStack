@@ -6,7 +6,8 @@ import threading
 from collections.abc import Callable
 from typing import Any, Optional
 
-from .._compat import sublime
+import sublime
+
 from ._availability import set_unavailable
 
 _CG_EVENT_SOURCE_STATE_COMBINED_SESSION_STATE = 0
