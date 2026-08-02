@@ -5,7 +5,7 @@ from typing import Optional
 
 from .captions import caption_for_sheet_identities
 from .constants import TAB_HISTORY_LIMIT
-from .sheets import SheetIdentity, sheet_identity
+from .sheets import SheetIdentity, identities_have_dirty_sheet, sheet_identity
 from .state import GroupSelectionState, SheetSelectionHistory
 
 
@@ -13,6 +13,7 @@ from .state import GroupSelectionState, SheetSelectionHistory
 class Entry:
     selection: GroupSelectionState
     caption: list[str]
+    dirty: bool = False
 
 
 def collect_entries(window, history: SheetSelectionHistory) -> list[Entry]:
@@ -23,10 +24,12 @@ def collect_entries(window, history: SheetSelectionHistory) -> list[Entry]:
     group_state_stack = history["groups"].get(str(active_group))
     if group_state_stack:
         for group_state in group_state_stack:
+            identities = group_state["selected_sheets"]
             entries.append(
                 Entry(
                     selection=group_state,
-                    caption=caption_for_sheet_identities(group_state["selected_sheets"], window),
+                    caption=caption_for_sheet_identities(identities, window),
+                    dirty=identities_have_dirty_sheet(identities, window, active_group),
                 )
             )
             seen_identities.update(_selection_identity_keys(group_state))
@@ -38,13 +41,13 @@ def collect_entries(window, history: SheetSelectionHistory) -> list[Entry]:
         if identity in seen_identities:
             continue
 
-        entries.append(_entry_for_sheet(sheet, window))
+        entries.append(_entry_for_sheet(sheet, window, active_group))
         seen_identities.add(identity)
 
     return entries
 
 
-def _entry_for_sheet(sheet, window) -> Entry:
+def _entry_for_sheet(sheet, window, group: int) -> Entry:
     identity = sheet_identity(sheet, window)
     return Entry(
         selection={
@@ -52,6 +55,7 @@ def _entry_for_sheet(sheet, window) -> Entry:
             "selected_sheets": [identity],
         },
         caption=caption_for_sheet_identities([identity], window),
+        dirty=identities_have_dirty_sheet([identity], window, group),
     )
 
 

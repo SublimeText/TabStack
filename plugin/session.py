@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from ._compat import sublime
+from .constants import KIND_MODIFIED
 from .ctrl_release import CtrlReleasePoller
 from .sheets import apply_group_selection
 from .state import TabStackWindowState
@@ -26,7 +27,14 @@ def show_panel(window, state) -> None:
     if not state.session_active or not state.session_entries:
         return
 
-    items = [entry.caption for entry in state.session_entries]
+    items = [
+        sublime.QuickPanelItem(
+            trigger=entry.caption[0],
+            details=entry.caption[1],
+            kind=KIND_MODIFIED if entry.dirty else sublime.KIND_AMBIGUOUS,
+        )
+        for entry in state.session_entries
+    ]
 
     def on_select(index: int) -> None:
         if index < 0:

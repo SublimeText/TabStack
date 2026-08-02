@@ -79,6 +79,19 @@ def sheet_name(sheet) -> Optional[str]:
     return get_name() if get_name else None
 
 
+def sheet_is_dirty(sheet) -> bool:
+    view = sheet.view()
+    return view is not None and view.is_dirty()
+
+
+def identities_have_dirty_sheet(identities: list[SheetIdentity], window, group: int) -> bool:
+    return any(
+        (sheet := find_sheet_by_identity_and_group(window, identity, group)) is not None
+        and sheet_is_dirty(sheet)
+        for identity in identities
+    )
+
+
 def find_live_sheets(window, identities: list[SheetIdentity], group: int) -> list[object]:
     return [
         live_sheet
