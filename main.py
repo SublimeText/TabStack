@@ -7,4 +7,4 @@ for module_name in [module_name for module_name in sys.modules if module_name.st
     del sys.modules[module_name]
 del prefix
 
-from .plugin import *  # noqa: F401,E402,F403 # ty: ignore[unresolved-import]
+from .plugin import *  # noqa: F401,E402,F403
