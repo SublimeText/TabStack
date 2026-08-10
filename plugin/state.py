@@ -1,9 +1,21 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Optional, Protocol
+
+import sublime
 
 from .models import Entry, GroupSelectionState
+
+
+class Poller(Protocol):
+    """The part of a poller the window state has to know about."""
+
+    def stop(self) -> None: ...
+
+
+class CtrlPoller(Poller, Protocol):
+    def is_ctrl_down(self) -> bool: ...
 
 
 @dataclass
@@ -17,8 +29,8 @@ class TabStackWindowState:
     session_group: int = 0
     session_entries: Optional[list[Entry]] = None
     session_panel_reopening: bool = False
-    selection_poller: Any = None
-    ctrl_release_poller: Any = None
+    selection_poller: Optional[Poller] = None
+    ctrl_release_poller: Optional[CtrlPoller] = None
     overlay_depth: int = 0
     """Counter for nested overlay/quick-panel widget focus tracking.
 
@@ -48,7 +60,7 @@ class TabStackWindowState:
 _WINDOW_STATE: dict[int, TabStackWindowState] = {}
 
 
-def get_state(window) -> TabStackWindowState:
+def get_state(window: sublime.Window) -> TabStackWindowState:
     window_id = window.id()
     state = _WINDOW_STATE.get(window_id)
     if state is None:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, cast
+from typing import TYPE_CHECKING, Optional, cast, final
 
 import sublime
 
@@ -9,11 +9,21 @@ from .models import GroupSelectionState, SheetIdentity, SheetSelectionHistory
 from .sheets import find_sheet_by_identity_and_group, sheet_identity
 from .state import TabStackWindowState, get_state
 
+if TYPE_CHECKING:
+    from sublime_types import Value
+    from typing_extensions import TypeGuard
+
 _HISTORY_KEY = "tab_stack.sheet_selection_history"
 
 
+@final
 class SelectionHistoryPoller:
-    def __init__(self, state: TabStackWindowState, window, interval_ms: int = 500) -> None:
+    def __init__(
+        self,
+        state: TabStackWindowState,
+        window: sublime.Window,
+        interval_ms: int = 500,
+    ) -> None:
         self._state = state
         self._window = window
         self._interval_ms = interval_ms
@@ -41,11 +51,13 @@ class SelectionHistoryPoller:
         # (e.g. goto anything, which temporarily focuses sheets/tabs)
         # is active.
         if not self._state.session_active and not self._state.overlay_active:
-            sync_selection_history(self._window)
+            _ = sync_selection_history(self._window)
         self._schedule()
 
 
-def current_group_selection_state(window, group: int) -> Optional[GroupSelectionState]:
+def current_group_selection_state(
+    window: sublime.Window, group: int
+) -> Optional[GroupSelectionState]:
     selected_sheets = list(window.selected_sheets_in_group(group))
     selected_identities = [
         sheet_identity(sheet, window) for sheet in selected_sheets if sheet.group() is not None
@@ -68,25 +80,27 @@ def current_group_selection_state(window, group: int) -> Optional[GroupSelection
     }
 
 
-def history_for_window(window) -> SheetSelectionHistory:
-    history = window.settings().get(_HISTORY_KEY)
-    if isinstance(history, dict) and is_current_history(history):
-        return cast(SheetSelectionHistory, history)
+def history_for_window(window: sublime.Window) -> SheetSelectionHistory:
+    stored = window.settings().get(_HISTORY_KEY)
+    if isinstance(stored, dict) and is_current_history(stored):
+        return stored
 
     history = default_history()
-    window.settings().set(_HISTORY_KEY, history)
+    store_history(window, history)
     return history
 
 
-def store_history(window, history: SheetSelectionHistory) -> None:
-    window.settings().set(_HISTORY_KEY, history)
+def store_history(window: sublime.Window, history: SheetSelectionHistory) -> None:
+    # A TypedDict is not assignable to `Value` because `dict` and `list` are
+    # invariant, so the JSON-compatible shape has to be asserted here.
+    window.settings().set(_HISTORY_KEY, cast("Value", cast(object, history)))
 
 
 def default_history() -> SheetSelectionHistory:
     return {"groups": {}}
 
 
-def is_current_history(history: dict[str, Any]) -> bool:
+def is_current_history(history: dict[str, Value]) -> TypeGuard[SheetSelectionHistory]:
     groups = history.get("groups")
     if not isinstance(groups, dict):
         return False
@@ -110,7 +124,7 @@ def is_current_history(history: dict[str, Any]) -> bool:
 
 
 def sync_selection_history(
-    window,
+    window: sublime.Window,
     prune_removed_sheets: bool = False,
 ) -> SheetSelectionHistory:
     history = history_for_window(window)
@@ -158,7 +172,7 @@ def prepend_group_state(
 
 
 def prune_history_stack_for_live_sheets(
-    window,
+    window: sublime.Window,
     group: int,
     group_state_stack: list[GroupSelectionState],
 ) -> list[GroupSelectionState]:
@@ -173,7 +187,7 @@ def prune_history_stack_for_live_sheets(
 
 
 def prune_group_state_for_live_sheets(
-    window,
+    window: sublime.Window,
     group: int,
     group_state: GroupSelectionState,
 ) -> Optional[GroupSelectionState]:
@@ -251,7 +265,7 @@ def prune_history_stack(
     return updated_stack
 
 
-def prune_sheet_from_history(window, sheet) -> None:
+def prune_sheet_from_history(window: sublime.Window, sheet: sublime.Sheet) -> None:
     state = get_state(window)
     sheet_id = sheet_identity(sheet, window)
     if state.session_origin_selection is not None:

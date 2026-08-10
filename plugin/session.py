@@ -10,7 +10,7 @@ from .state import TabStackWindowState
 SHOW_PANEL_DELAY_MS = 150
 
 
-def _ensure_ctrl_release_poller(window, state) -> None:
+def _ensure_ctrl_release_poller(window: sublime.Window, state: TabStackWindowState) -> None:
     if state.ctrl_release_poller:
         return
 
@@ -20,12 +20,14 @@ def _ensure_ctrl_release_poller(window, state) -> None:
         elif state.session_pending:
             _commit_pending_session(window, state)
 
-    state.ctrl_release_poller = CtrlReleasePoller(on_release, 25)
-    state.ctrl_release_poller.start()
+    poller = CtrlReleasePoller(on_release, 25)
+    state.ctrl_release_poller = poller
+    poller.start()
 
 
-def show_panel(window, state) -> None:
-    if not state.session_active or not state.session_entries:
+def show_panel(window: sublime.Window, state: TabStackWindowState) -> None:
+    entries = state.session_entries
+    if not state.session_active or not entries:
         return
 
     items = [
@@ -34,7 +36,7 @@ def show_panel(window, state) -> None:
             details=entry.caption[1],
             kind=KIND_MODIFIED if entry.dirty else sublime.KIND_AMBIGUOUS,
         )
-        for entry in state.session_entries
+        for entry in entries
     ]
 
     def on_select(index: int) -> None:
@@ -45,7 +47,7 @@ def show_panel(window, state) -> None:
         _commit_session(window, state)
 
     def on_highlight(index: int) -> None:
-        if index < 0 or index >= len(state.session_entries):
+        if index < 0 or index >= len(entries):
             return
         state.session_selected_index = index
         preview_entry(window, state)
@@ -61,7 +63,7 @@ def show_panel(window, state) -> None:
     _ensure_ctrl_release_poller(window, state)
 
 
-def schedule_panel(window, state, *, token: int) -> None:
+def schedule_panel(window: sublime.Window, state: TabStackWindowState, *, token: int) -> None:
     _ensure_ctrl_release_poller(window, state)
 
     def open_if_still_pending() -> None:
@@ -77,16 +79,16 @@ def schedule_panel(window, state, *, token: int) -> None:
     sublime.set_timeout(open_if_still_pending, SHOW_PANEL_DELAY_MS)
 
 
-def preview_entry(window, state: TabStackWindowState) -> None:
+def preview_entry(window: sublime.Window, state: TabStackWindowState) -> None:
     if state.session_entries is None:
         return
     if not 0 <= state.session_selected_index < len(state.session_entries):
         return
     entry = state.session_entries[state.session_selected_index]
-    apply_group_selection(window, entry.selection, state.session_group)
+    _ = apply_group_selection(window, entry.selection, state.session_group)
 
 
-def _commit_pending_session(window, state) -> None:
+def _commit_pending_session(window: sublime.Window, state: TabStackWindowState) -> None:
     entries = state.session_entries
     if not entries:
         state.clear_session()
@@ -94,11 +96,11 @@ def _commit_pending_session(window, state) -> None:
 
     index = clamp_index(state.session_selected_index, len(entries))
     selection = entries[index].selection
-    apply_group_selection(window, selection, state.session_group)
+    _ = apply_group_selection(window, selection, state.session_group)
     state.clear_session()
 
 
-def _commit_session(window, state) -> None:
+def _commit_session(window: sublime.Window, state: TabStackWindowState) -> None:
     if not state.session_active:
         return
 
@@ -117,7 +119,7 @@ def _commit_session(window, state) -> None:
     state.clear_session()
 
 
-def cancel_session(window, state) -> None:
+def cancel_session(window: sublime.Window, state: TabStackWindowState) -> None:
     if not state.session_active:
         if not state.session_pending:
             return
@@ -127,7 +129,7 @@ def cancel_session(window, state) -> None:
     origin = state.session_origin_selection
     window.run_command("hide_overlay", {"cancel": True})
     if origin is not None:
-        apply_group_selection(window, origin, state.session_group)
+        _ = apply_group_selection(window, origin, state.session_group)
     state.clear_session()
 
 
@@ -135,7 +137,7 @@ def clamp_index(index: int, size: int) -> int:
     return max(0, min(index, size - 1))
 
 
-def reopen_panel_at_index(window, state: TabStackWindowState, index: int) -> None:
+def reopen_panel_at_index(window: sublime.Window, state: TabStackWindowState, index: int) -> None:
     if not state.session_active or state.session_panel_reopening:
         return
 
@@ -149,7 +151,7 @@ def reopen_panel_at_index(window, state: TabStackWindowState, index: int) -> Non
     sublime.set_timeout(lambda: show_panel(window, state), 0)
 
 
-def handle_panel_closed(window, state) -> None:
+def handle_panel_closed(window: sublime.Window, state: TabStackWindowState) -> None:
     if state.session_panel_reopening:
         state.session_panel_reopening = False
         return

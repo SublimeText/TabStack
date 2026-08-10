@@ -2,12 +2,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import sublime
 
-def caption_for_sheet_identities(identities, window) -> list[str]:
+from .models import SheetIdentity
+
+
+def caption_for_sheet_identities(
+    identities: list[SheetIdentity],
+    window: sublime.Window,
+) -> list[str]:
     titles = [identity["name"] or _title_from_path(identity["path"]) for identity in identities]
-    paths = [
-        _relative_path(identity["path"], window) for identity in identities if identity["path"]
-    ]
+    paths = [_relative_path(path, window) for identity in identities if (path := identity["path"])]
 
     return [" | ".join(titles), " | ".join(paths)]
 
@@ -18,7 +23,7 @@ def _title_from_path(file_name: str | None) -> str:
     return "Untitled"
 
 
-def _relative_path(file_name: str, window) -> str:
+def _relative_path(file_name: str, window: sublime.Window) -> str:
     absolute = Path(file_name)
     for folder in window.folders():
         try:

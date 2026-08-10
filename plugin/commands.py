@@ -10,11 +10,9 @@ from .state import get_state
 
 
 class TabStackOpenCommand(sublime_plugin.WindowCommand):
-    def run(self, *, forward=True, selected_index: int = 1) -> None:
+    def run(self, *, forward: bool = True, selected_index: int = 1) -> None:
         window = self.window
-        if window is None:
-            return
-        elif not is_available():
+        if not is_available():
             window.run_command("next_view_in_stack" if forward else "prev_view_in_stack")
             return
         elif not forward:
@@ -49,9 +47,6 @@ class TabStackOpenCommand(sublime_plugin.WindowCommand):
 class TabStackCancelCommand(sublime_plugin.WindowCommand):
     def run(self) -> None:
         window = self.window
-        if window is None:
-            return
-
         state = get_state(window)
         cancel_session(window, state)
 
@@ -59,9 +54,6 @@ class TabStackCancelCommand(sublime_plugin.WindowCommand):
 class TabStackCycleCommand(sublime_plugin.WindowCommand):
     def run(self, *, forward: bool) -> None:
         window = self.window
-        if window is None:
-            return
-
         state = get_state(window)
         entries = state.session_entries
         if not state.session_active or not entries or len(entries) < 2:
