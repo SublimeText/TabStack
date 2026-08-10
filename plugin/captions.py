@@ -12,13 +12,6 @@ def caption_for_sheet_identities(identities, window) -> list[str]:
     return [" | ".join(titles), " | ".join(paths)]
 
 
-def _title_from_sheet(sheet) -> str:
-    file_name = sheet.file_name()
-    if file_name:
-        return Path(file_name).name
-    return "Untitled"
-
-
 def _title_from_path(file_name: str | None) -> str:
     if file_name:
         return Path(file_name).name

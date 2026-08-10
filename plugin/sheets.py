@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING, Optional, TypedDict
 
 if TYPE_CHECKING:
@@ -65,13 +64,6 @@ def sheet_occurrence(sheet, window) -> int:
         return matching_sheet_ids.index(sheet.id())
     except ValueError:
         return 0
-
-
-def sheet_title(sheet) -> str:
-    file_name = sheet.file_name()
-    if file_name:
-        return Path(file_name).name
-    return "Untitled"
 
 
 def sheet_name(sheet) -> Optional[str]:
