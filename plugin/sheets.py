@@ -1,18 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, TypedDict
+from typing import Optional
 
-if TYPE_CHECKING:
-    from .state import GroupSelectionState
-
-
-class SheetIdentity(TypedDict):
-    name: Optional[str]
-    """The sheet name is `None` on ST builds <4205
-    because the required API method does not exist there."""
-    occurrence: int
-    kind: Optional[str]
-    path: Optional[str]
+from .models import GroupSelectionState, SheetIdentity
 
 
 def active_sheet_identity(window) -> Optional[SheetIdentity]:

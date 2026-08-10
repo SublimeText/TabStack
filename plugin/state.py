@@ -1,22 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, TypedDict
+from typing import Any, Optional
 
-from .sheets import SheetIdentity
-
-if TYPE_CHECKING:
-    from .mru import Entry
-
-
-class GroupSelectionState(TypedDict):
-    active_sheet_index: Optional[int]
-    selected_sheets: list[SheetIdentity]
-
-
-class SheetSelectionHistory(TypedDict):
-    # Only strings may be used as keys in ST settings.
-    groups: dict[str, list[GroupSelectionState]]
+from .models import Entry, GroupSelectionState
 
 
 @dataclass

@@ -5,13 +5,9 @@ from typing import Any, Optional, cast
 import sublime
 
 from .constants import TAB_HISTORY_LIMIT
-from .sheets import SheetIdentity, find_sheet_by_identity_and_group, sheet_identity
-from .state import (
-    GroupSelectionState,
-    SheetSelectionHistory,
-    TabStackWindowState,
-    get_state,
-)
+from .models import GroupSelectionState, SheetIdentity, SheetSelectionHistory
+from .sheets import find_sheet_by_identity_and_group, sheet_identity
+from .state import TabStackWindowState, get_state
 
 _HISTORY_KEY = "tab_stack.sheet_selection_history"
 

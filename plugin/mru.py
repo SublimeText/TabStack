@@ -1,19 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Optional
 
 from .captions import caption_for_sheet_identities
 from .constants import TAB_HISTORY_LIMIT
-from .sheets import SheetIdentity, identities_have_dirty_sheet, sheet_identity
-from .state import GroupSelectionState, SheetSelectionHistory
-
-
-@dataclass
-class Entry:
-    selection: GroupSelectionState
-    caption: list[str]
-    dirty: bool = False
+from .models import Entry, GroupSelectionState, SheetIdentity, SheetSelectionHistory
+from .sheets import identities_have_dirty_sheet, sheet_identity
 
 
 def collect_entries(window, history: SheetSelectionHistory) -> list[Entry]:
