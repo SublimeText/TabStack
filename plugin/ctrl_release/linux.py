@@ -6,7 +6,7 @@ import os
 import threading
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Optional, cast, final
 
 import sublime
 
@@ -14,7 +14,7 @@ from ._availability import set_unavailable
 
 _XK_Control_L = 0xFFE3
 _XK_Control_R = 0xFFE4
-_X11: Optional[Any] = None
+_x11: Optional[ctypes.CDLL] = None
 
 
 @dataclass
@@ -23,11 +23,12 @@ class _X11State:
     keycode_left: int
     keycode_right: int
     xclose_display: Callable[[int], int]
-    xquery_keymap: Callable[[int, Any], int]
+    xquery_keymap: Callable[[int, ctypes.Array[ctypes.c_ubyte]], int]
 
 
+@final
 class CtrlReleasePoller(threading.Thread):
-    def __init__(self, on_release, interval_ms):
+    def __init__(self, on_release: Callable[[], None], interval_ms: int) -> None:
         super().__init__(daemon=True)
         self._on_release = on_release
         self._interval_ms = interval_ms
@@ -58,7 +59,7 @@ class CtrlReleasePoller(threading.Thread):
     def _close_state(self) -> None:
         with self._display_lock:
             if self._state is not None:
-                self._state.xclose_display(self._state.display)
+                _ = self._state.xclose_display(self._state.display)
                 self._state = None
 
     def _fire_release(self) -> None:
@@ -73,7 +74,7 @@ class CtrlReleasePoller(threading.Thread):
             state = self._state
             if state is None:
                 return False
-            state.xquery_keymap(state.display, keymap)
+            _ = state.xquery_keymap(state.display, keymap)
             keycode_left = state.keycode_left
             keycode_right = state.keycode_right
         return _keycode_is_down(keymap, keycode_left) or _keycode_is_down(
@@ -93,16 +94,20 @@ class CtrlReleasePoller(threading.Thread):
         if x11 is None:
             return None
 
-        display = x11.XOpenDisplay(None)
+        display = cast(Optional[int], x11.XOpenDisplay(None))
         if not display:
             return None
 
+        keysym_to_keycode = cast("Callable[[int, int], int]", x11.XKeysymToKeycode)
         return _X11State(
             display=display,
-            keycode_left=int(x11.XKeysymToKeycode(display, _XK_Control_L)),
-            keycode_right=int(x11.XKeysymToKeycode(display, _XK_Control_R)),
-            xclose_display=x11.XCloseDisplay,
-            xquery_keymap=x11.XQueryKeymap,
+            keycode_left=keysym_to_keycode(display, _XK_Control_L),
+            keycode_right=keysym_to_keycode(display, _XK_Control_R),
+            xclose_display=cast("Callable[[int], int]", x11.XCloseDisplay),
+            xquery_keymap=cast(
+                "Callable[[int, ctypes.Array[ctypes.c_ubyte]], int]",
+                x11.XQueryKeymap,
+            ),
         )
 
 
@@ -110,18 +115,20 @@ def probe() -> bool:
     return _get_x11() is not None
 
 
-def _keycode_is_down(keymap, keycode: int) -> bool:
+def _keycode_is_down(keymap: ctypes.Array[ctypes.c_ubyte], keycode: int) -> bool:
     if not keycode:
         return False
     byte_index = keycode // 8
     bit = keycode % 8
-    return bool(keymap[byte_index] & (1 << bit))
+    # Indexing a `c_ubyte` array yields `Any` in typeshed.
+    keymap_byte = cast(int, keymap[byte_index])
+    return bool(keymap_byte & (1 << bit))
 
 
-def _get_x11() -> Optional[Any]:
-    global _X11
-    if _X11 is not None:
-        return _X11
+def _get_x11() -> Optional[ctypes.CDLL]:
+    global _x11
+    if _x11 is not None:
+        return _x11
 
     lib_name = ctypes.util.find_library("X11") or "libX11.so.6"
 
@@ -140,10 +147,10 @@ def _get_x11() -> Optional[Any]:
     x11.XQueryKeymap.restype = ctypes.c_int
     x11.XKeysymToKeycode.argtypes = [ctypes.c_void_p, ctypes.c_ulong]
     x11.XKeysymToKeycode.restype = ctypes.c_ubyte
-    _X11 = x11
+    _x11 = x11
     return x11
 
 
 def plugin_unloaded() -> None:
-    global _X11
-    _X11 = None
+    global _x11
+    _x11 = None
