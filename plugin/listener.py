@@ -140,6 +140,11 @@ class TabStackListener(sublime_plugin.EventListener):
         if window is None:
             return
 
+        # Closing an inactive tab does not change the focus,
+        # so there is nothing to restore.
+        if window.active_sheet_in_group(group) != sheet:
+            return
+
         state = get_state(window)
         if state.session_active:
             return
