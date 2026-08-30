@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional, Protocol
 
 import sublime
@@ -31,17 +31,19 @@ class TabStackWindowState:
     session_panel_reopening: bool = False
     selection_poller: Optional[Poller] = None
     ctrl_release_poller: Optional[CtrlPoller] = None
-    overlay_depth: int = 0
-    """Counter for nested overlay/quick-panel widget focus tracking.
+    overlay_views: set[int] = field(default_factory=set)
+    """Ids of the currently focused overlay/quick-panel widget views.
 
-    We use a counter so a widget deactivating while another is still open
-    doesn't prematurely re-enable history syncing.
+    We track ids rather than a count so a widget deactivating while another
+    is still open doesn't prematurely re-enable history syncing,
+    and so an unpaired activation or deactivation cannot desynchronize
+    the flag permanently.
     Example widgets are goto anything, goto symbol/reference or find panels.
     """
 
     @property
     def overlay_active(self) -> bool:
-        return self.overlay_depth > 0
+        return bool(self.overlay_views)
 
     def clear_session(self) -> None:
         self.session_active = False

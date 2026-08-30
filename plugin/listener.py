@@ -26,6 +26,17 @@ def _ensure_selection_poller(window: sublime.Window, state: TabStackWindowState)
         poller.start()
 
 
+def _is_widget_view(view: sublime.View) -> bool:
+    """Whether the view is an overlay/panel widget rather than a tab.
+
+    `View.element` is not usable for this: output views report an element
+    even when they live in a real tab, most notably the Find Results buffer
+    ("find_in_files:output"), but also build output ("exec:output").
+    Only views without a backing sheet are actual widgets.
+    """
+    return view.sheet_id() == 0
+
+
 def _session_boundary_value(window: sublime.Window, key: str) -> bool:
     state = get_state(window)
     if key == "tab_stack.session_pending":
@@ -53,8 +64,8 @@ class TabStackListener(sublime_plugin.EventListener):
 
         state = get_state(window)
 
-        if view.element() is not None:
-            state.overlay_depth += 1
+        if _is_widget_view(view):
+            state.overlay_views.add(view.id())
             return
 
         if state.session_active or state.session_pending or state.overlay_active:
@@ -64,15 +75,11 @@ class TabStackListener(sublime_plugin.EventListener):
         _ = sync_selection_history(window)
 
     def on_deactivated(self, view: sublime.View) -> None:
-        if view.element() is None:
-            return
-
         window = view.window()
         if window is None:
             return
 
-        state = get_state(window)
-        state.overlay_depth = max(0, state.overlay_depth - 1)
+        get_state(window).overlay_views.discard(view.id())
 
     def on_query_context(
         self,
@@ -111,6 +118,9 @@ class TabStackListener(sublime_plugin.EventListener):
     def on_close(self, view: sublime.View) -> None:
         window = view.window()
         if window is not None:
+            # A widget destroyed without a deactivation would otherwise
+            # pin `overlay_active` and freeze history syncing for the window.
+            get_state(window).overlay_views.discard(view.id())
             sheet = view.sheet()
             if sheet is not None:
                 prune_sheet_from_history(window, sheet)
