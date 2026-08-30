@@ -3,22 +3,23 @@ from __future__ import annotations
 import ctypes
 import threading
 from collections.abc import Callable
-from typing import Any, Optional
+from typing import Optional, cast, final
 
 import sublime
 
 from ._availability import set_unavailable
 
 _VK_CONTROL = 0x11
-_USER32: Optional[Any] = None
+_get_async_key_state: Optional[Callable[[int], int]] = None
 
 
+@final
 class CtrlReleasePoller(threading.Thread):
     def __init__(self, on_release: Callable[[], None], interval_ms: int) -> None:
         super().__init__(daemon=True)
         self._on_release = on_release
         self._interval_ms = interval_ms
-        self._user32: Any = _get_user32()
+        self._key_state = _load_key_state()
         self._stop_event = threading.Event()
 
     def start(self) -> None:
@@ -27,14 +28,14 @@ class CtrlReleasePoller(threading.Thread):
         self._stop_event.clear()
         super().start()
 
-    def stop(self) -> None:
-        self._stop_event.set()
-
     def run(self) -> None:
         while not self._stop_event.wait(self._interval_ms / 1000):
-            if self._user32 is None or not self._ctrl_down():
+            if self._key_state is None or not self._ctrl_down():
                 self._fire_release()
                 break
+
+    def stop(self) -> None:
+        self._stop_event.set()
 
     def _fire_release(self) -> None:
         if self._stop_event.is_set():
@@ -43,23 +44,23 @@ class CtrlReleasePoller(threading.Thread):
         sublime.set_timeout(self._on_release)
 
     def _ctrl_down(self) -> bool:
-        return bool(self._user32.GetAsyncKeyState(_VK_CONTROL) & 0x8000)
+        key_state = self._key_state
+        if key_state is None:
+            return False
+        return bool(key_state(_VK_CONTROL) & 0x8000)
 
     def is_ctrl_down(self) -> bool:
         return self._ctrl_down()
 
-    def _open_user32(self) -> Optional[Any]:
-        return _get_user32()
-
 
 def probe() -> bool:
-    return _get_user32() is not None
+    return _load_key_state() is not None
 
 
-def _get_user32() -> Optional[Any]:
-    global _USER32
-    if _USER32 is not None:
-        return _USER32
+def _load_key_state() -> Optional[Callable[[int], int]]:
+    global _get_async_key_state
+    if _get_async_key_state is not None:
+        return _get_async_key_state
 
     try:
         user32 = ctypes.CDLL("user32.dll")
@@ -68,12 +69,13 @@ def _get_user32() -> Optional[Any]:
         set_unavailable()
         return None
 
-    user32.GetAsyncKeyState.argtypes = [ctypes.c_int]
-    user32.GetAsyncKeyState.restype = ctypes.c_short
-    _USER32 = user32
-    return user32
+    get_async_key_state = user32.GetAsyncKeyState
+    get_async_key_state.argtypes = [ctypes.c_int]
+    get_async_key_state.restype = ctypes.c_short
+    _get_async_key_state = cast("Callable[[int], int]", get_async_key_state)
+    return _get_async_key_state
 
 
 def plugin_unloaded() -> None:
-    global _USER32
-    _USER32 = None
+    global _get_async_key_state
+    _get_async_key_state = None

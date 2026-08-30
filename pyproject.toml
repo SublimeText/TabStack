@@ -6,8 +6,8 @@ requires-python = ">=3.8"
 
 [dependency-groups]
 dev = [
+  "basedpyright",
   "ruff",
-  "ty",
   "sublime-text-stubs==1.4200.0b1",
 ]
 
@@ -18,3 +18,13 @@ target-version = "py38"
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
 ignore = ["UP045"]
+
+[tool.basedpyright]
+pythonVersion = "3.8"
+typeCheckingMode = "all"
+# sublime-text-stubs is a stub-only distribution; the modules it describes
+# only exist inside Sublime Text's plugin host.
+reportMissingModuleSource = false
+# `typing.override` requires 3.12 and the plugin host provides no
+# typing_extensions, so the decorator cannot be used at runtime.
+reportImplicitOverride = false

@@ -30,4 +30,5 @@
 
 - Use `uv run ruff check .` for linting.
 - Use `uv run ruff format .` for formatting.
+- Use `uv run basedpyright` for type checks.
 - `pyproject.toml` only defines Ruff settings; there is no repo-local test runner.

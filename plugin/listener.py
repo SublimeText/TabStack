@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Optional
+
 import sublime
 import sublime_plugin
 
@@ -11,16 +13,20 @@ from .history import (
     sync_selection_history,
 )
 from .sheets import apply_group_selection
-from .state import get_state, remove_window_state
+from .state import TabStackWindowState, get_state, remove_window_state
+
+if TYPE_CHECKING:
+    from sublime_types import Value
 
 
-def _ensure_selection_poller(window, state) -> None:
+def _ensure_selection_poller(window: sublime.Window, state: TabStackWindowState) -> None:
     if state.selection_poller is None:
-        state.selection_poller = SelectionHistoryPoller(state, window)
-        state.selection_poller.start()
+        poller = SelectionHistoryPoller(state, window)
+        state.selection_poller = poller
+        poller.start()
 
 
-def _session_boundary_value(window, key: str) -> bool:
+def _session_boundary_value(window: sublime.Window, key: str) -> bool:
     state = get_state(window)
     if key == "tab_stack.session_pending":
         return state.session_pending
@@ -40,7 +46,7 @@ def _session_boundary_value(window, key: str) -> bool:
 
 
 class TabStackListener(sublime_plugin.EventListener):
-    def on_activated(self, view) -> None:
+    def on_activated(self, view: sublime.View) -> None:
         window = view.window()
         if window is None:
             return
@@ -55,9 +61,9 @@ class TabStackListener(sublime_plugin.EventListener):
             return
 
         _ensure_selection_poller(window, state)
-        sync_selection_history(window)
+        _ = sync_selection_history(window)
 
-    def on_deactivated(self, view) -> None:
+    def on_deactivated(self, view: sublime.View) -> None:
         if view.element() is None:
             return
 
@@ -68,7 +74,15 @@ class TabStackListener(sublime_plugin.EventListener):
         state = get_state(window)
         state.overlay_depth = max(0, state.overlay_depth - 1)
 
-    def on_query_context(self, view, key, operator, operand, match_all):
+    def on_query_context(
+        self,
+        # `view` is widened because ST may query contexts without a view.
+        view: Optional[sublime.View],
+        key: str,
+        operator: sublime.QueryOperator,
+        operand: Value,
+        match_all: bool,
+    ) -> Optional[bool]:
         if key == "tab_stack.ctrl_release_available":
             value = is_available()
         elif key in {
@@ -94,7 +108,7 @@ class TabStackListener(sublime_plugin.EventListener):
             return value != bool(operand)
         return None
 
-    def on_close(self, view) -> None:
+    def on_close(self, view: sublime.View) -> None:
         window = view.window()
         if window is not None:
             sheet = view.sheet()
@@ -103,9 +117,13 @@ class TabStackListener(sublime_plugin.EventListener):
         if window is not None and not window.views():
             remove_window_state(window.id())
 
-    def on_pre_close(self, view) -> None:
+    def on_pre_close(self, view: sublime.View) -> None:
         sheet = view.sheet()
         if sheet is None or sheet.is_transient() or sheet.is_semi_transient():
+            return
+
+        group = sheet.group()
+        if group is None:
             return
 
         window = view.window()
@@ -117,9 +135,9 @@ class TabStackListener(sublime_plugin.EventListener):
             return
 
         history = history_for_window(window)
-        group_state_stack = history["groups"].get(str(sheet.group()))
+        group_state_stack = history["groups"].get(str(group))
         if group_state_stack is None or len(group_state_stack) < 2:
             return
 
         previous_selection = group_state_stack[1]
-        apply_group_selection(window, previous_selection, sheet.group())
+        _ = apply_group_selection(window, previous_selection, group)

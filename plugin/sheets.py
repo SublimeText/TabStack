@@ -1,29 +1,24 @@
 from __future__ import annotations
 
-from pathlib import Path
-from typing import TYPE_CHECKING, Optional, TypedDict
+from typing import Callable, Optional, cast
 
-if TYPE_CHECKING:
-    from .state import GroupSelectionState
+import sublime
 
-
-class SheetIdentity(TypedDict):
-    name: Optional[str]
-    """The sheet name is `None` on ST builds <4205
-    because the required API method does not exist there."""
-    occurrence: int
-    kind: Optional[str]
-    path: Optional[str]
+from .models import GroupSelectionState, SheetIdentity
 
 
-def active_sheet_identity(window) -> Optional[SheetIdentity]:
+def active_sheet_identity(window: sublime.Window) -> Optional[SheetIdentity]:
     sheet = window.active_sheet()
     if sheet is None:
         return None
     return sheet_identity(sheet, window)
 
 
-def find_sheet_by_identity_and_group(window, identity: SheetIdentity, group: int):
+def find_sheet_by_identity_and_group(
+    window: sublime.Window,
+    identity: SheetIdentity,
+    group: int,
+) -> Optional[sublime.Sheet]:
     matching = [
         sheet
         for sheet in window.sheets_in_group(group)
@@ -37,7 +32,7 @@ def find_sheet_by_identity_and_group(window, identity: SheetIdentity, group: int
     return None
 
 
-def sheet_identity(sheet, window) -> SheetIdentity:
+def sheet_identity(sheet: sublime.Sheet, window: sublime.Window) -> SheetIdentity:
     return {
         "name": sheet_name(sheet),
         "occurrence": sheet_occurrence(sheet, window),
@@ -46,7 +41,7 @@ def sheet_identity(sheet, window) -> SheetIdentity:
     }
 
 
-def sheet_occurrence(sheet, window) -> int:
+def sheet_occurrence(sheet: sublime.Sheet, window: sublime.Window) -> int:
     group = sheet.group()
     if group is None:
         return 0
@@ -67,24 +62,22 @@ def sheet_occurrence(sheet, window) -> int:
         return 0
 
 
-def sheet_title(sheet) -> str:
-    file_name = sheet.file_name()
-    if file_name:
-        return Path(file_name).name
-    return "Untitled"
-
-
-def sheet_name(sheet) -> Optional[str]:
-    get_name = getattr(sheet, "name", None)
+def sheet_name(sheet: sublime.Sheet) -> Optional[str]:
+    # `Sheet.name` only exists on ST builds >=4205.
+    get_name = cast(Optional[Callable[[], str]], getattr(sheet, "name", None))
     return get_name() if get_name else None
 
 
-def sheet_is_dirty(sheet) -> bool:
+def sheet_is_dirty(sheet: sublime.Sheet) -> bool:
     view = sheet.view()
     return view is not None and view.is_dirty()
 
 
-def identities_have_dirty_sheet(identities: list[SheetIdentity], window, group: int) -> bool:
+def identities_have_dirty_sheet(
+    identities: list[SheetIdentity],
+    window: sublime.Window,
+    group: int,
+) -> bool:
     return any(
         (sheet := find_sheet_by_identity_and_group(window, identity, group)) is not None
         and sheet_is_dirty(sheet)
@@ -92,7 +85,11 @@ def identities_have_dirty_sheet(identities: list[SheetIdentity], window, group: 
     )
 
 
-def find_live_sheets(window, identities: list[SheetIdentity], group: int) -> list[object]:
+def find_live_sheets(
+    window: sublime.Window,
+    identities: list[SheetIdentity],
+    group: int,
+) -> list[sublime.Sheet]:
     return [
         live_sheet
         for identity in identities
@@ -100,7 +97,11 @@ def find_live_sheets(window, identities: list[SheetIdentity], group: int) -> lis
     ]
 
 
-def apply_group_selection(window, selection: GroupSelectionState, group: int) -> bool:
+def apply_group_selection(
+    window: sublime.Window,
+    selection: GroupSelectionState,
+    group: int,
+) -> bool:
     sheets_to_select = find_live_sheets(window, selection["selected_sheets"], group)
     if not sheets_to_select:
         return False

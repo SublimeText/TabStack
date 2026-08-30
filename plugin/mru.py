@@ -1,22 +1,16 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Optional
+
+import sublime
 
 from .captions import caption_for_sheet_identities
 from .constants import TAB_HISTORY_LIMIT
-from .sheets import SheetIdentity, identities_have_dirty_sheet, sheet_identity
-from .state import GroupSelectionState, SheetSelectionHistory
+from .models import Entry, GroupSelectionState, SheetIdentity, SheetSelectionHistory
+from .sheets import identities_have_dirty_sheet, sheet_identity
 
 
-@dataclass
-class Entry:
-    selection: GroupSelectionState
-    caption: list[str]
-    dirty: bool = False
-
-
-def collect_entries(window, history: SheetSelectionHistory) -> list[Entry]:
+def collect_entries(window: sublime.Window, history: SheetSelectionHistory) -> list[Entry]:
     entries: list[Entry] = []
     active_group = window.active_group()
     seen_identities: set[tuple[Optional[str], int, Optional[str], Optional[str]]] = set()
@@ -47,7 +41,7 @@ def collect_entries(window, history: SheetSelectionHistory) -> list[Entry]:
     return entries
 
 
-def _entry_for_sheet(sheet, window, group: int) -> Entry:
+def _entry_for_sheet(sheet: sublime.Sheet, window: sublime.Window, group: int) -> Entry:
     identity = sheet_identity(sheet, window)
     return Entry(
         selection={
@@ -59,7 +53,10 @@ def _entry_for_sheet(sheet, window, group: int) -> Entry:
     )
 
 
-def _non_transient_sheets_in_group(window, group: int):
+def _non_transient_sheets_in_group(
+    window: sublime.Window,
+    group: int,
+) -> list[sublime.Sheet]:
     return [sheet for sheet in window.sheets_in_group(group) if not sheet.is_transient()]
 
 

@@ -3,21 +3,21 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Optional
 
-_AVAILABLE: Optional[bool] = None
+_available: Optional[bool] = None
 
 
 def set_unavailable() -> None:
-    global _AVAILABLE
-    _AVAILABLE = False
+    global _available
+    _available = False
 
 
 def is_available(probe: Callable[[], bool]) -> bool:
-    global _AVAILABLE
-    if _AVAILABLE is None:
-        _AVAILABLE = probe()
-    return _AVAILABLE
+    global _available
+    if _available is None:
+        _available = probe()
+    return _available
 
 
 def reset() -> None:
-    global _AVAILABLE
-    _AVAILABLE = None
+    global _available
+    _available = None
