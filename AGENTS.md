@@ -17,6 +17,8 @@
 - Ctrl-release detection lives in `plugin/ctrl_release/`.
 - Uner Linux, Ctrl-release polling uses the X11 key state API, so Sublime must run under X11 or XWayland; a native Wayland session has no pollable global key state and Sublime exposes no key-release API.
 - `tab_stack_open` arms a pending session, starts a Ctrl-release poller, and opens the quick panel after a short delay unless Ctrl is released first.
+- Package defaults live in `TabStack.sublime-settings` and are read through `sublime.load_settings` in `plugin/settings.py`.
+- `preview_file` controls whether the highlighted entry is shown while the list is open. When it is false, the file changes only when the list closes.
 - Wrap-around cycling is implemented by intentionally closing and reopening the quick panel at the opposite boundary.
   That handoff keeps the session active and reuses the existing Ctrl-release poller.
 - `tab_stack.session_active` is the quick-panel session context key.

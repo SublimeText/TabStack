@@ -1,0 +1,5 @@
+{
+  // Show the highlighted file while the list is open.
+  // When false, the file changes only after the list closes.
+  "preview_file": true
+}

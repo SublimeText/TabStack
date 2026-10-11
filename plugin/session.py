@@ -4,6 +4,7 @@ import sublime
 
 from .constants import KIND_MODIFIED
 from .ctrl_release import CtrlReleasePoller
+from .settings import preview_file
 from .sheets import apply_group_selection
 from .state import TabStackWindowState
 
@@ -50,7 +51,8 @@ def show_panel(window: sublime.Window, state: TabStackWindowState) -> None:
         if index < 0 or index >= len(entries):
             return
         state.session_selected_index = index
-        preview_entry(window, state)
+        if preview_file():
+            preview_entry(window, state)
 
     window.show_quick_panel(
         items,
@@ -70,7 +72,10 @@ def schedule_panel(window: sublime.Window, state: TabStackWindowState, *, token:
         if not state.session_pending or state.session_pending_token != token:
             return
         if state.ctrl_release_poller is not None and not state.ctrl_release_poller.is_ctrl_down():
-            state.clear_session()
+            # A fast tap releases Ctrl before this deadline. Committing here
+            # covers the case where the poller's callback has not run yet;
+            # clearing instead drops the tab switch.
+            _commit_pending_session(window, state)
             return
         state.session_active = True
         state.session_pending = False
@@ -101,7 +106,7 @@ def _commit_pending_session(window: sublime.Window, state: TabStackWindowState) 
 
 
 def _commit_session(window: sublime.Window, state: TabStackWindowState) -> None:
-    if not state.session_active:
+    if not state.session_active or state.session_committing:
         return
 
     entries = state.session_entries
@@ -115,6 +120,26 @@ def _commit_session(window: sublime.Window, state: TabStackWindowState) -> None:
         cancel_session(window, state)
         return
 
+    # Preview already focused this sheet while the list was open, so closing
+    # now does not postpone a file change.
+    if preview_file():
+        window.run_command("hide_overlay", {"cancel": True})
+        state.clear_session()
+        return
+
+    # Focusing and hiding in this same turn does not show the new sheet until
+    # the list has finished closing. Yield once so the focus lands first.
+    token = state.session_pending_token
+    sublime.set_timeout(lambda: _hide_committed_panel(window, state, token), 0)
+
+
+def _hide_committed_panel(window: sublime.Window, state: TabStackWindowState, token: int | None) -> None:
+    if not state.session_active:
+        return
+    if token is not None and state.session_pending_token != token:
+        return
+
+    state.session_committing = True
     window.run_command("hide_overlay", {"cancel": True})
     state.clear_session()
 
@@ -154,6 +179,11 @@ def reopen_panel_at_index(window: sublime.Window, state: TabStackWindowState, in
 def handle_panel_closed(window: sublime.Window, state: TabStackWindowState) -> None:
     if state.session_panel_reopening:
         state.session_panel_reopening = False
+        return
+
+    # Commit already focused the chosen sheet. This close is that commit
+    # finishing, not an abort, so the original sheet must stay put.
+    if state.session_committing:
         return
 
     cancel_session(window, state)

@@ -29,6 +29,12 @@ class TabStackWindowState:
     session_group: int = 0
     session_entries: Optional[list[Entry]] = None
     session_panel_reopening: bool = False
+    session_committing: bool = False
+    """A commit has focused its sheet and is closing the list.
+
+    The overlay's close callback must not treat that close as a cancel,
+    or it puts the original sheet back.
+    """
     selection_poller: Optional[Poller] = None
     ctrl_release_poller: Optional[CtrlPoller] = None
     overlay_views: set[int] = field(default_factory=set)
@@ -53,6 +59,7 @@ class TabStackWindowState:
         self.session_group = 0
         self.session_entries = None
         self.session_panel_reopening = False
+        self.session_committing = False
         self.session_pending_token += 1
         if self.ctrl_release_poller is not None:
             self.ctrl_release_poller.stop()
