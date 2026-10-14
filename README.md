@@ -104,7 +104,8 @@ In that case, build and install it again with the commands above.
 
 ### Settings
 
-In `TabStack.sublime-settings`:
+In `TabStack.sublime-settings`,
+which `Preferences: TabStack Settings` opens from the Command Palette:
 
 - `keystate_helper_path`:
   the path of the installed helper,
