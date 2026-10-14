@@ -110,6 +110,16 @@ which `Preferences: TabStack Settings` opens from the Command Palette:
 - `keystate_helper_path`:
   the path of the installed helper,
   `/usr/local/libexec/tabstack-keystate` by default.
+- `keystate_ctrl_keys`:
+  the keys the helper treats as Ctrl,
+  `["leftctrl", "rightctrl"]` by default.
+  The helper reads physical keys
+  and does not see the keyboard layout,
+  so set this if your layout remaps Ctrl,
+  for example `["leftctrl", "rightctrl", "capslock"]` for the XKB option `ctrl:nocaps`,
+  or `["capslock", "rightctrl"]` for `ctrl:swapcaps`.
+  Allowed are `leftctrl`, `rightctrl`, `capslock`,
+  `leftalt`, `rightalt`, `leftmeta`, `rightmeta` and `compose`.
 - `show_wayland_setup_dialog`:
   set to `false` to suppress the dialog
   that offers the setup on native Wayland.
@@ -122,13 +132,15 @@ which `Preferences: TabStack Settings` opens from the Command Palette:
   which allows reading any file regardless of permissions.
 - The helper sets `no_new_privs` at startup,
   opens every `/dev/input/event*` device read-only
-  and keeps only those that advertise a Ctrl key.
+  and keeps only those that advertise one of the watched keys.
   It then drops all capabilities immediately,
   before it reports any state.
   Review the source to confirm this.
 - Anyone who can execute the helper can run it,
   so any local user can read the Ctrl state of your keyboards through it.
-  It reports nothing but whether a Ctrl key is held.
+  It reports nothing but whether one of the watched keys is held,
+  and it only accepts the modifier keys listed under `keystate_ctrl_keys`,
+  so it cannot be used to log typed characters.
 - Installing it as `root:root` with mode `0755` in `/usr/local/libexec`
   prevents the user's own processes from modifying it.
   Replacing the binary drops the capability,

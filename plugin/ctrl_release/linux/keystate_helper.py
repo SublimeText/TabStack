@@ -6,16 +6,17 @@ import threading
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import IO, final
+from typing import IO, cast, final
 
 import sublime
 
 HANDSHAKE = "tabstack-keystate 2"
 DEFAULT_HELPER_PATH = "/usr/local/libexec/tabstack-keystate"
+DEFAULT_CTRL_KEYS = ("leftctrl", "rightctrl")
 
 _HANDSHAKE_PREFIX = "tabstack-keystate "
 _SETTINGS_FILE = "TabStack.sublime-settings"
-_SETTINGS_WATCH_KEY = "tab_stack_keystate_helper_path"
+_SETTINGS_WATCH_KEY = "tab_stack_keystate_helper"
 _PROBE_TIMEOUT_S = 2
 _EXIT_TIMEOUT_S = 1
 
@@ -30,17 +31,22 @@ class HelperStatus(Enum):
 
 @dataclass(frozen=True)
 class HelperProbe:
-    # The probed path; the poller runs exactly this one, so both stay consistent
-    # until the next probe even if `keystate_helper_path` changes in between.
+    # The probed path and keys; the poller runs exactly these, so both stay consistent
+    # until the next probe even if the settings change in between.
     path: str
+    ctrl_keys: tuple[str, ...]
     status: HelperStatus
     detail: str
+
+    @property
+    def command(self) -> list[str]:
+        return [self.path, *self.ctrl_keys]
 
 
 _probe: HelperProbe | None = None
 _probe_generation = 0
-# The path of the probe that is running or finished, as `_probe` may still be `None`.
-_probed_path: str | None = None
+# The path and keys of the probe that is running or finished, as `_probe` may still be `None`.
+_probed_config: tuple[str, tuple[str, ...]] | None = None
 # Called on the main thread once the probe result no longer holds.
 _on_invalidated: Callable[[], None] | None = None
 
@@ -52,48 +58,70 @@ def helper_path() -> str:
     return os.path.expanduser(path)
 
 
-def probe_helper(path: str) -> HelperProbe:
+def helper_ctrl_keys() -> tuple[str, ...]:
+    keys: object = sublime.load_settings(_SETTINGS_FILE).get("keystate_ctrl_keys")
+    if not isinstance(keys, list) or not keys:
+        return DEFAULT_CTRL_KEYS
+    # The helper validates the names against its allowlist and reports a usage error.
+    return tuple(str(key) for key in cast(list[object], keys))
+
+
+def _helper_config() -> tuple[str, tuple[str, ...]]:
+    return helper_path(), helper_ctrl_keys()
+
+
+def probe_helper(path: str, ctrl_keys: tuple[str, ...]) -> HelperProbe:
     try:
         # Empty stdin makes the helper exit right after reporting the initial state.
-        result = subprocess.run([path], input=b"", capture_output=True, timeout=_PROBE_TIMEOUT_S)
+        result = subprocess.run(
+            [path, *ctrl_keys], input=b"", capture_output=True, timeout=_PROBE_TIMEOUT_S
+        )
     except FileNotFoundError:
-        return HelperProbe(path, HelperStatus.MISSING, f"{path} does not exist.")
+        return HelperProbe(path, ctrl_keys, HelperStatus.MISSING, f"{path} does not exist.")
     except subprocess.TimeoutExpired:
         return HelperProbe(
-            path, HelperStatus.FAILED, f"{path} did not exit within {_PROBE_TIMEOUT_S} seconds."
+            path,
+            ctrl_keys,
+            HelperStatus.FAILED,
+            f"{path} did not exit within {_PROBE_TIMEOUT_S} seconds.",
         )
     except OSError as exc:
-        return HelperProbe(path, HelperStatus.FAILED, f"{path} could not be run: {exc}")
+        return HelperProbe(path, ctrl_keys, HelperStatus.FAILED, f"{path} could not be run: {exc}")
 
     lines = result.stdout.decode("ascii", errors="replace").splitlines()
-    return _parse_probe_output(path, lines)
+    return _parse_probe_output(path, ctrl_keys, lines)
 
 
-def _parse_probe_output(path: str, lines: list[str]) -> HelperProbe:
+def _parse_probe_output(path: str, ctrl_keys: tuple[str, ...], lines: list[str]) -> HelperProbe:
     handshake = lines[0] if lines else ""
     if handshake != HANDSHAKE:
         if handshake.startswith(_HANDSHAKE_PREFIX):
             return HelperProbe(
                 path,
+                ctrl_keys,
                 HelperStatus.OUTDATED,
                 f"{path} speaks protocol {handshake!r}, but {HANDSHAKE!r} is required.",
             )
         return HelperProbe(
-            path, HelperStatus.FAILED, f"{path} did not identify itself as `tabstack-keystate`."
+            path,
+            ctrl_keys,
+            HelperStatus.FAILED,
+            f"{path} did not identify itself as `tabstack-keystate`.",
         )
 
     report = lines[1] if len(lines) > 1 else ""
     if report in ("0", "1"):
-        return HelperProbe(path, HelperStatus.OK, f"{path} reports the Ctrl key state.")
+        return HelperProbe(path, ctrl_keys, HelperStatus.OK, f"{path} reports the Ctrl key state.")
     if report.split(" ")[:2] == ["error", "no-access"]:
         return HelperProbe(
             path,
+            ctrl_keys,
             HelperStatus.NO_ACCESS,
             f"{path} cannot open the keyboard devices: {report}",
         )
     if report.startswith("error "):
-        return HelperProbe(path, HelperStatus.FAILED, f"{path} reported: {report}")
-    return HelperProbe(path, HelperStatus.FAILED, f"{path} reported no Ctrl key state.")
+        return HelperProbe(path, ctrl_keys, HelperStatus.FAILED, f"{path} reported: {report}")
+    return HelperProbe(path, ctrl_keys, HelperStatus.FAILED, f"{path} reported no Ctrl key state.")
 
 
 def get_helper_probe() -> HelperProbe | None:
@@ -106,16 +134,15 @@ def start_helper_probe(on_done: Callable[[HelperProbe], None]) -> None:
 
     Running the helper can take up to `_PROBE_TIMEOUT_S`, which must not block the UI.
     """
-    global _probe, _probe_generation, _probed_path
+    global _probe, _probe_generation, _probed_config
     _probe = None
     _probe_generation += 1
     generation = _probe_generation
     # Resolved here because the Sublime API is only safe on the main thread.
-    path = helper_path()
-    _probed_path = path
+    path, ctrl_keys = _probed_config = _helper_config()
 
     def probe() -> None:
-        result = probe_helper(path)
+        result = probe_helper(path, ctrl_keys)
         sublime.set_timeout(lambda: _finish_probe(generation, result, on_done))
 
     sublime.set_timeout_async(probe)
@@ -133,23 +160,23 @@ def _finish_probe(
 
 
 def reset_helper_probe() -> None:
-    global _probe, _probe_generation, _probed_path
+    global _probe, _probe_generation, _probed_config
     _probe = None
     _probe_generation += 1
-    _probed_path = None
+    _probed_config = None
 
 
 def watch_helper(on_invalidated: Callable[[], None]) -> None:
     """Call `on_invalidated` whenever the probe result no longer holds.
 
-    That is when `keystate_helper_path` no longer matches the probed path,
+    That is when `keystate_helper_path` or `keystate_ctrl_keys` no longer match the probe,
     or when the probed helper fails during a session.
     """
     global _on_invalidated
     _on_invalidated = on_invalidated
 
     def on_settings_changed() -> None:
-        if helper_path() != _probed_path:
+        if _helper_config() != _probed_config:
             on_invalidated()
 
     sublime.load_settings(_SETTINGS_FILE).add_on_change(_SETTINGS_WATCH_KEY, on_settings_changed)
@@ -212,7 +239,7 @@ class HelperCtrlReleasePoller(threading.Thread):
                 return None
             try:
                 self._process = subprocess.Popen(
-                    [self._path],
+                    self._probe.command,
                     stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.DEVNULL,

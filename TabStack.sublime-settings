@@ -3,6 +3,12 @@
   // It is used whenever it works, and it is required under native Wayland.
   "keystate_helper_path": "/usr/local/libexec/tabstack-keystate",
 
+  // The keys the helper treats as Ctrl, for keyboard layouts that remap Ctrl,
+  // e.g. `["leftctrl", "rightctrl", "capslock"]` for the XKB option `ctrl:nocaps`.
+  // Allowed: "leftctrl", "rightctrl", "capslock", "leftalt", "rightalt",
+  // "leftmeta", "rightmeta", "compose".
+  "keystate_ctrl_keys": ["leftctrl", "rightctrl"],
+
   // Offer the helper's setup instructions on the first Ctrl+Tab per plugin load
   // when Ctrl-release detection is unavailable under native Wayland.
   "show_wayland_setup_dialog": true,
