@@ -28,3 +28,7 @@ reportMissingModuleSource = false
 # `typing.override` requires 3.12 and the plugin host provides no
 # typing_extensions, so the decorator cannot be used at runtime.
 reportImplicitOverride = false
+
+[tool.ty.environment]
+# Sublime Text imports packages from `Packages/`, so `main.py` is `TabStack.main`.
+root = [".."]
