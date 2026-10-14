@@ -3,7 +3,7 @@ from __future__ import annotations
 import sublime
 
 from .constants import KIND_MODIFIED
-from .ctrl_release import CtrlReleasePoller
+from .ctrl_release import create_poller
 from .sheets import apply_group_selection
 from .state import TabStackWindowState
 
@@ -20,7 +20,7 @@ def _ensure_ctrl_release_poller(window: sublime.Window, state: TabStackWindowSta
         elif state.session_pending:
             _commit_pending_session(window, state)
 
-    poller = CtrlReleasePoller(on_release, 25)
+    poller = create_poller(on_release, 25)
     state.ctrl_release_poller = poller
     poller.start()
 
@@ -70,7 +70,8 @@ def schedule_panel(window: sublime.Window, state: TabStackWindowState, *, token:
         if not state.session_pending or state.session_pending_token != token:
             return
         if state.ctrl_release_poller is not None and not state.ctrl_release_poller.is_ctrl_down():
-            state.clear_session()
+            # Ctrl was released before the panel appeared; switch like a quick press would.
+            _commit_pending_session(window, state)
             return
         state.session_active = True
         state.session_pending = False

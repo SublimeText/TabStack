@@ -15,6 +15,8 @@ class Poller(Protocol):
 
 
 class CtrlPoller(Poller, Protocol):
+    def start(self) -> None: ...
+
     def is_ctrl_down(self) -> bool: ...
 
 

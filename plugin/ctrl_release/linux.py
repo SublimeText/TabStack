@@ -10,7 +10,10 @@ from typing import Optional, cast, final
 
 import sublime
 
+from ..state import CtrlPoller
 from ._availability import set_unavailable
+from .keystate_helper import HelperCtrlReleasePoller, HelperStatus, get_helper_probe
+from .keystate_helper import plugin_unloaded as _helper_plugin_unloaded
 
 _XK_Control_L = 0xFFE3
 _XK_Control_R = 0xFFE4
@@ -27,7 +30,7 @@ class _X11State:
 
 
 @final
-class CtrlReleasePoller(threading.Thread):
+class X11CtrlReleasePoller(threading.Thread):
     def __init__(self, on_release: Callable[[], None], interval_ms: int) -> None:
         super().__init__(daemon=True)
         self._on_release = on_release
@@ -111,8 +114,30 @@ class CtrlReleasePoller(threading.Thread):
         )
 
 
+def is_native_wayland() -> bool:
+    return bool(os.environ.get("WAYLAND_DISPLAY")) and os.environ.get("GDK_BACKEND") != "x11"
+
+
+def create_poller(on_release: Callable[[], None], interval_ms: int) -> CtrlPoller:
+    path = _working_helper_path()
+    if path is not None:
+        return HelperCtrlReleasePoller(on_release, interval_ms, path)
+    return X11CtrlReleasePoller(on_release, interval_ms)
+
+
 def probe() -> bool:
-    return _get_x11() is not None
+    if _working_helper_path() is not None:
+        return True
+    # Under native Wayland, XWayland reports Ctrl as released while Sublime has focus,
+    # which would commit every session immediately.
+    return not is_native_wayland() and _get_x11() is not None
+
+
+def _working_helper_path() -> Optional[str]:
+    helper_probe = get_helper_probe()
+    if helper_probe is None or helper_probe.status is not HelperStatus.OK:
+        return None
+    return helper_probe.path
 
 
 def _keycode_is_down(keymap: ctypes.Array[ctypes.c_ubyte], keycode: int) -> bool:
@@ -154,3 +179,4 @@ def _get_x11() -> Optional[ctypes.CDLL]:
 def plugin_unloaded() -> None:
     global _x11
     _x11 = None
+    _helper_plugin_unloaded()

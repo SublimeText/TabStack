@@ -15,7 +15,9 @@
 - `TabStackListener.on_close` prunes closed sheets and removes empty window state.
 - Tab captions come from `plugin/captions.py`; widgets, panels, and transient/non-tab views are excluded from MRU.
 - Ctrl-release detection lives in `plugin/ctrl_release/`.
-- Uner Linux, Ctrl-release polling uses the X11 key state API, so Sublime must run under X11 or XWayland; a native Wayland session has no pollable global key state and Sublime exposes no key-release API.
+- Under Linux, Ctrl-release detection uses the `tabstack-keystate` helper (`plugin/ctrl_release/keystate_helper.py`) when its probe succeeds; the probe result is cached per plugin load.
+  The helper reads evdev key state with `cap_dac_read_search`, is spawned once per session, and reports Ctrl state changes on stdout.
+- Without a working helper, Linux falls back to the X11 key state API, but not on native Wayland (`is_native_wayland()` in `plugin/ctrl_release/linux.py`), because XWayland reports Ctrl as released while a Wayland client has focus; Sublime exposes no key-release API.
 - `tab_stack_open` arms a pending session, starts a Ctrl-release poller, and opens the quick panel after a short delay unless Ctrl is released first.
 - Wrap-around cycling is implemented by intentionally closing and reopening the quick panel at the opposite boundary.
   That handoff keeps the session active and reuses the existing Ctrl-release poller.

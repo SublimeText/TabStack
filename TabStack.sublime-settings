@@ -1,0 +1,5 @@
+{
+  // Path to the `tabstack-keystate` helper that detects Ctrl releases on Linux.
+  // It is used whenever it works, and it is required under native Wayland.
+  "keystate_helper_path": "/usr/local/libexec/tabstack-keystate",
+}
