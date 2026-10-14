@@ -14,7 +14,7 @@ from .ctrl_release.linux.keystate_helper import (
     get_helper_probe,
 )
 
-__all__ = ["TabStackSetupKeystateHelperCommand"]
+__all__ = ["TabStackReplaceContentsCommand", "TabStackSetupKeystateHelperCommand"]
 
 assert __package__ is not None
 # This module lives in the `plugin` subpackage; resources are addressed by the top-level package.
@@ -23,6 +23,7 @@ _SETTINGS_FILE = "TabStack.sublime-settings"
 _SOURCE_NAME = "tabstack-keystate.c"
 _SETUP_COMMAND = "tab_stack_setup_keystate_helper"
 _SETUP_CAPTION = "TabStack: Set Up Ctrl Detection for Wayland"
+_INSTRUCTIONS_VIEW_SETTING = "tab_stack_setup_instructions"
 
 _wayland_dialog_shown = False
 
@@ -55,16 +56,28 @@ class TabStackSetupKeystateHelperCommand(sublime_plugin.WindowCommand):
             sublime.error_message(f"TabStack: could not extract the helper source: {exc}")
             return
 
-        window = self.window
+        view = _find_instructions_view()
+        window = self.window if view is None else view.window() or self.window
         source_view = window.open_file(source_path)
-        view = window.new_file(syntax="Packages/Markdown/Markdown.sublime-syntax")
-        view.set_name("TabStack Setup")
-        view.set_scratch(True)
+        if view is None:
+            view = _new_instructions_view(window)
+        view.set_read_only(False)
         view.run_command(
-            "append", {"characters": _instructions(probe, extraction_dir, source_path)}
+            "tab_stack_replace_contents",
+            {"characters": _instructions(probe, extraction_dir, source_path)},
         )
         view.set_read_only(True)
         _show_side_by_side(window, view, source_view)
+        window.bring_to_front()
+
+
+class TabStackReplaceContentsCommand(sublime_plugin.TextCommand):
+    def run(self, edit: sublime.Edit, characters: str) -> None:
+        _ = self.view.replace(edit, sublime.Region(0, self.view.size()), characters)
+        # A caret at the replaced region's start grows into a selection of the new text.
+        selection = self.view.sel()
+        selection.clear()
+        selection.add(0)
 
 
 def offer_wayland_setup(window: sublime.Window) -> bool:
@@ -105,17 +118,37 @@ def _extract_source(extraction_dir: str) -> str:
     return source_path
 
 
+def _find_instructions_view() -> sublime.View | None:
+    for window in sublime.windows():
+        for view in window.views():
+            if view.settings().get(_INSTRUCTIONS_VIEW_SETTING, False):
+                return view
+    return None
+
+
+def _new_instructions_view(window: sublime.Window) -> sublime.View:
+    view = window.new_file(syntax="Packages/Markdown/Markdown.sublime-syntax")
+    view.set_name("TabStack Setup")
+    view.set_scratch(True)
+    view.settings().set(_INSTRUCTIONS_VIEW_SETTING, True)
+    return view
+
+
 def _show_side_by_side(window: sublime.Window, left: sublime.View, right: sublime.View) -> None:
     """Select both views' sheets so that Sublime Text shows them side by side.
 
     The source may have been open already, possibly in another group,
-    so the new `left` view is moved in front of it instead of the other way around.
+    so `left` is moved directly in front of it instead of the other way around.
     """
     left_sheet = left.sheet()
     right_sheet = right.sheet()
     if left_sheet is None or right_sheet is None:
         return
     group, index = window.get_sheet_index(right_sheet)
+    left_group, left_index = window.get_sheet_index(left_sheet)
+    if left_group == group and left_index < index:
+        # Moving `left` out of the group shifts `right` one position to the front.
+        index -= 1
     window.set_sheet_index(left_sheet, group, index)
     window.select_sheets([left_sheet, right_sheet])
 

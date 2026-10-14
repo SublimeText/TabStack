@@ -22,6 +22,7 @@
 - Without a working helper, Linux falls back to the X11 key state API (`plugin/ctrl_release/linux/x11.py`), but not on native Wayland (`is_native_wayland()` in `plugin/ctrl_release/linux/__init__.py`), because XWayland reports Ctrl as released while a Wayland client has focus; Sublime exposes no key-release API.
 - On native Wayland without a working helper, the first `ctrl+tab` per plugin load shows a dialog offering the setup (`offer_wayland_setup` in `plugin/setup.py`), unless `show_wayland_setup_dialog` is `false`.
 - `tab_stack_setup_keystate_helper` (Command Palette: `TabStack: Set Up Ctrl Detection for Wayland`) re-probes, extracts `keystate/tabstack-keystate.c` to `sublime.cache_path()/TabStack/keystate/`, and shows the build, install and `setcap` commands.
+  It reuses an open instructions view (marked by the `tab_stack_setup_instructions` view setting) and selects it together with the source, instructions on the left.
   The plugin never runs `sudo`, a compiler or `setcap`; the user installs the helper to `keystate_helper_path` (default `/usr/local/libexec/tabstack-keystate`) with `cap_dac_read_search`, which the helper drops right after opening the input devices.
 - `tab_stack_open` arms a pending session, starts a Ctrl-release poller, and opens the quick panel after a short delay unless Ctrl is released first.
 - Wrap-around cycling is implemented by intentionally closing and reopening the quick panel at the opposite boundary.
