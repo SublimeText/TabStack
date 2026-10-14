@@ -7,7 +7,7 @@ import sublime
 import sublime_plugin
 
 from .ctrl_release import is_native_wayland, refresh_availability
-from .ctrl_release.keystate_helper import (
+from .ctrl_release.linux.keystate_helper import (
     DEFAULT_HELPER_PATH,
     HelperProbe,
     HelperStatus,

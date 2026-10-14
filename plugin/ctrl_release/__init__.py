@@ -35,10 +35,10 @@ elif sys.platform == "win32":
         return False
 
 else:
-    from .keystate_helper import HelperProbe, start_helper_probe
-    from .keystate_helper import watch_helper_path as _watch_platform_settings
     from .linux import create_poller, is_native_wayland, probe
     from .linux import plugin_unloaded as _platform_plugin_unloaded
+    from .linux.keystate_helper import HelperProbe, start_helper_probe
+    from .linux.keystate_helper import watch_helper_path as _watch_platform_settings
 
     def _start_platform_probe(on_done: Callable[[], None]) -> None:
         def on_helper_probed(_: HelperProbe) -> None:
