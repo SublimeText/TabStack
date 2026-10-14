@@ -67,6 +67,49 @@ static bool has_ctrl(const unsigned long *keys) {
     return false;
 }
 
+/*
+ * Reads the key capabilities that sysfs exposes for `name`, so that devices
+ * without a Ctrl key need not be opened: closing an evdev device waits for an
+ * RCU grace period, which adds up to hundreds of milliseconds before the
+ * initial state could be reported. The file holds hex longs, most significant
+ * first, with leading zero longs omitted. Returns false if it cannot be read.
+ */
+static bool read_sysfs_keys(const char *name, unsigned long *keys) {
+    char path[128];
+    int length = snprintf(path, sizeof path, "/sys/class/input/%s/device/capabilities/key", name);
+    if (length < 0 || (size_t)length >= sizeof path) {
+        return false;
+    }
+    FILE *file = fopen(path, "re");
+    if (file == NULL) {
+        return false;
+    }
+    char line[KEY_LONGS * 17 + 2];
+    bool ok = fgets(line, sizeof line, file) != NULL;
+    fclose(file);
+    if (!ok) {
+        return false;
+    }
+
+    unsigned long words[KEY_LONGS];
+    size_t count = 0;
+    for (char *token = strtok(line, " \n"); token != NULL; token = strtok(NULL, " \n")) {
+        if (count == KEY_LONGS) {
+            return false;
+        }
+        char *end;
+        errno = 0;
+        words[count++] = strtoul(token, &end, 16);
+        if (errno != 0 || *end != '\0') {
+            return false;
+        }
+    }
+    for (size_t i = 0; i < count; i++) {
+        keys[i] = words[count - 1 - i];
+    }
+    return true;
+}
+
 /* Opens every device with a Ctrl key. Returns whether any open was denied. */
 static bool open_keyboards(void) {
     DIR *dir = opendir("/dev/input");
@@ -77,6 +120,10 @@ static bool open_keyboards(void) {
     struct dirent *entry;
     while (device_count < MAX_DEVICES && (entry = readdir(dir)) != NULL) {
         if (strncmp(entry->d_name, "event", 5) != 0) {
+            continue;
+        }
+        unsigned long sysfs_keys[KEY_LONGS] = {0};
+        if (read_sysfs_keys(entry->d_name, sysfs_keys) && !has_ctrl(sysfs_keys)) {
             continue;
         }
         int fd = openat(dirfd(dir), entry->d_name, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
