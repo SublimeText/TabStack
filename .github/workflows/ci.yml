@@ -18,3 +18,12 @@ jobs:
       - run: uv sync --group dev --no-install-project
       - run: uv run ruff check .
       - run: uv run basedpyright
+
+  keystate-helper:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.3
+      - run: sudo modprobe uinput
+      - run: mkdir -p build
+      - run: cc -std=c11 -O2 -Wall -Wextra -Werror -o build/tabstack-keystate keystate/tabstack-keystate.c
+      - run: sudo python3 -I tests/keystate_smoke.py --helper build/tabstack-keystate --user "$USER"
