@@ -23,7 +23,7 @@ import tempfile
 import time
 from typing import cast
 
-HANDSHAKE = "tabstack-keystate 1"
+HANDSHAKE = "tabstack-keystate 2"
 LINE_TIMEOUT = 2.0
 SILENCE_TIMEOUT = 0.3
 EXIT_TIMEOUT = 1.0
@@ -36,6 +36,7 @@ EV_KEY = 0x01
 SYN_REPORT = 0
 KEY_LEFTCTRL = 29
 KEY_A = 30
+KEY_CAPSLOCK = 58
 KEY_RIGHTCTRL = 97
 BUS_USB = 0x03
 
@@ -65,7 +66,7 @@ class VirtualKeyboard:
     def __init__(self) -> None:
         self._fd: int = os.open("/dev/uinput", os.O_WRONLY | os.O_NONBLOCK)
         _ = fcntl.ioctl(self._fd, UI_SET_EVBIT, EV_KEY)
-        for key in (KEY_LEFTCTRL, KEY_RIGHTCTRL, KEY_A):
+        for key in (KEY_LEFTCTRL, KEY_RIGHTCTRL, KEY_A, KEY_CAPSLOCK):
             _ = fcntl.ioctl(self._fd, UI_SET_KEYBIT, key)
         setup = UINPUT_SETUP.pack(BUS_USB, 0x1234, 0x5678, 1, b"tabstack-keystate smoke test", 0)
         _ = fcntl.ioctl(self._fd, UI_DEV_SETUP, setup)
@@ -85,7 +86,7 @@ class VirtualKeyboard:
 
 
 class Helper:
-    def __init__(self, path: str, user: pwd.struct_passwd) -> None:
+    def __init__(self, path: str, user: pwd.struct_passwd, *keys: str) -> None:
         command = [
             "setpriv",
             "--reuid",
@@ -94,6 +95,7 @@ class Helper:
             str(user.pw_gid),
             "--init-groups",
             path,
+            *keys,
         ]
         self.process: subprocess.Popen[bytes] = subprocess.Popen(
             command, stdin=subprocess.PIPE, stdout=subprocess.PIPE
@@ -123,6 +125,12 @@ class Helper:
         line = self.read_line(LINE_TIMEOUT)
         if line != expected:
             raise SmokeFailure(f"{step}: expected {expected!r}, got {line!r}")
+
+    def expect_error(self, code: str, step: str) -> None:
+        line = self.read_line(LINE_TIMEOUT)
+        if line is None or not line.startswith(f"error {code} "):
+            raise SmokeFailure(f"{step}: expected 'error {code} ...', got {line!r}")
+        self.expect_exit(1, f"{step}: after error")
 
     def expect_silence(self, step: str) -> None:
         line = self.read_line(SILENCE_TIMEOUT)
@@ -173,6 +181,31 @@ def run_capable(path: str, user: pwd.struct_passwd, keyboard: VirtualKeyboard) -
         assert stdin is not None
         stdin.close()
         helper.expect_exit(0, "capable: stdin closed")
+    finally:
+        helper.close()
+
+
+def run_capable_remapped(path: str, user: pwd.struct_passwd, keyboard: VirtualKeyboard) -> None:
+    helper = Helper(path, user, "capslock")
+    try:
+        helper.expect_line(HANDSHAKE, "remapped: handshake")
+        helper.expect_line("0", "remapped: initial state")
+        keyboard.press(KEY_LEFTCTRL, 1)
+        keyboard.press(KEY_LEFTCTRL, 0)
+        helper.expect_silence("remapped: unwatched Ctrl down/up")
+        keyboard.press(KEY_CAPSLOCK, 1)
+        helper.expect_line("1", "remapped: Caps Lock down")
+        keyboard.press(KEY_CAPSLOCK, 0)
+        helper.expect_line("0", "remapped: Caps Lock up")
+    finally:
+        helper.close()
+
+
+def run_disallowed_key(path: str, user: pwd.struct_passwd) -> None:
+    helper = Helper(path, user, "a")
+    try:
+        helper.expect_line(HANDSHAKE, "disallowed key: handshake")
+        helper.expect_error("usage", "disallowed key")
     finally:
         helper.close()
 
@@ -235,6 +268,8 @@ def main() -> int:
         try:
             capable, incapable = install_copies(helper_path, directory)
             run_capable(capable, user, keyboard)
+            run_capable_remapped(capable, user, keyboard)
+            run_disallowed_key(capable, user)
             run_incapable(incapable, user)
         finally:
             shutil.rmtree(directory)

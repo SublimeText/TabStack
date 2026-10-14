@@ -12,9 +12,15 @@
  * the devices, before it reads any input or reports anything that depends on
  * them.
  *
- * Protocol, version 1: ASCII lines on stdout, each flushed.
- *   "tabstack-keystate 1" first, then either "error <code> <message>" and
- *   exit status 1, or the state ("1" while a Ctrl key is held, else "0")
+ * Usage: tabstack-keystate [key...]
+ *   The keys that count as Ctrl, by default "leftctrl rightctrl". Only the
+ *   names in `allowed_keys` are accepted, the keys that XKB `ctrl:*` options
+ *   can turn into Ctrl. Since any local user can run the helper with its
+ *   capability, reporting arbitrary keys would make it a keylogger.
+ *
+ * Protocol, version 2: ASCII lines on stdout, each flushed.
+ *   "tabstack-keystate 2" first, then either "error <code> <message>" and
+ *   exit status 1, or the state ("1" while a watched key is held, else "0")
  *   followed by one line per change. Exits 0 when stdin reaches EOF.
  *
  * Build: cc -std=c11 -O2 -Wall -Wextra -o tabstack-keystate tabstack-keystate.c
@@ -41,6 +47,25 @@
 #define BITS_PER_LONG (8 * sizeof(unsigned long))
 #define KEY_LONGS ((KEY_CNT + BITS_PER_LONG - 1) / BITS_PER_LONG)
 
+struct named_key {
+    const char *name;
+    unsigned int code;
+};
+
+static const struct named_key allowed_keys[] = {
+    {"leftctrl", KEY_LEFTCTRL},
+    {"rightctrl", KEY_RIGHTCTRL},
+    {"capslock", KEY_CAPSLOCK},
+    {"leftalt", KEY_LEFTALT},
+    {"rightalt", KEY_RIGHTALT},
+    {"leftmeta", KEY_LEFTMETA},
+    {"rightmeta", KEY_RIGHTMETA},
+    {"compose", KEY_COMPOSE},
+};
+#define ALLOWED_KEY_COUNT (sizeof allowed_keys / sizeof allowed_keys[0])
+
+static unsigned int watched_keys[ALLOWED_KEY_COUNT];
+static size_t watched_key_count;
 static int devices[MAX_DEVICES];
 static int device_count;
 
@@ -57,10 +82,29 @@ static void fail(const char *code, const char *message) {
     exit(1);
 }
 
-static bool has_ctrl(const unsigned long *keys) {
-    const unsigned int codes[] = {KEY_LEFTCTRL, KEY_RIGHTCTRL};
-    for (size_t i = 0; i < sizeof codes / sizeof codes[0]; i++) {
-        if ((keys[codes[i] / BITS_PER_LONG] >> (codes[i] % BITS_PER_LONG)) & 1UL) {
+/* Adds the allowed key `name` to the watched keys, or fails. */
+static void watch_key(const char *name) {
+    for (size_t i = 0; i < ALLOWED_KEY_COUNT; i++) {
+        if (strcmp(name, allowed_keys[i].name) != 0) {
+            continue;
+        }
+        for (size_t j = 0; j < watched_key_count; j++) {
+            if (watched_keys[j] == allowed_keys[i].code) {
+                fail("usage", "duplicate key");
+            }
+        }
+        watched_keys[watched_key_count++] = allowed_keys[i].code;
+        return;
+    }
+    char message[128];
+    snprintf(message, sizeof message, "key \"%.32s\" is not allowed", name);
+    fail("usage", message);
+}
+
+static bool has_watched_key(const unsigned long *keys) {
+    for (size_t i = 0; i < watched_key_count; i++) {
+        unsigned int code = watched_keys[i];
+        if ((keys[code / BITS_PER_LONG] >> (code % BITS_PER_LONG)) & 1UL) {
             return true;
         }
     }
@@ -69,7 +113,7 @@ static bool has_ctrl(const unsigned long *keys) {
 
 /*
  * Reads the key capabilities that sysfs exposes for `name`, so that devices
- * without a Ctrl key need not be opened: closing an evdev device waits for an
+ * without a watched key need not be opened: closing an evdev device waits for an
  * RCU grace period, which adds up to hundreds of milliseconds before the
  * initial state could be reported. The file holds hex longs, most significant
  * first, with leading zero longs omitted. Returns false if it cannot be read.
@@ -110,7 +154,7 @@ static bool read_sysfs_keys(const char *name, unsigned long *keys) {
     return true;
 }
 
-/* Opens every device with a Ctrl key. Returns whether any open was denied. */
+/* Opens every device with a watched key. Returns whether any open was denied. */
 static bool open_keyboards(void) {
     DIR *dir = opendir("/dev/input");
     if (dir == NULL) {
@@ -123,7 +167,7 @@ static bool open_keyboards(void) {
             continue;
         }
         unsigned long sysfs_keys[KEY_LONGS] = {0};
-        if (read_sysfs_keys(entry->d_name, sysfs_keys) && !has_ctrl(sysfs_keys)) {
+        if (read_sysfs_keys(entry->d_name, sysfs_keys) && !has_watched_key(sysfs_keys)) {
             continue;
         }
         int fd = openat(dirfd(dir), entry->d_name, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
@@ -132,7 +176,7 @@ static bool open_keyboards(void) {
             continue;
         }
         unsigned long keys[KEY_LONGS] = {0};
-        if (ioctl(fd, EVIOCGBIT(EV_KEY, sizeof keys), keys) < 0 || !has_ctrl(keys)) {
+        if (ioctl(fd, EVIOCGBIT(EV_KEY, sizeof keys), keys) < 0 || !has_watched_key(keys)) {
             close(fd);
             continue;
         }
@@ -153,7 +197,7 @@ static int drop_capabilities(void) {
 static int ctrl_state(void) {
     for (int i = 0; i < device_count; i++) {
         unsigned long keys[KEY_LONGS] = {0};
-        if (ioctl(devices[i], EVIOCGKEY(sizeof keys), keys) >= 0 && has_ctrl(keys)) {
+        if (ioctl(devices[i], EVIOCGKEY(sizeof keys), keys) >= 0 && has_watched_key(keys)) {
             return 1;
         }
     }
@@ -182,13 +226,21 @@ static bool stdin_open(short revents) {
     return n > 0 || (n < 0 && (errno == EINTR || errno == EAGAIN));
 }
 
-int main(void) {
+int main(int argc, char **argv) {
     signal(SIGPIPE, SIG_IGN);
     if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0) {
         perror("tabstack-keystate: prctl");
         return 1;
     }
-    emit("tabstack-keystate 1");
+    emit("tabstack-keystate 2");
+
+    if (argc < 2) {
+        watch_key("leftctrl");
+        watch_key("rightctrl");
+    }
+    for (int i = 1; i < argc; i++) {
+        watch_key(argv[i]);
+    }
 
     bool denied = open_keyboards();
     if (drop_capabilities() != 0) {
@@ -198,7 +250,7 @@ int main(void) {
         if (denied) {
             fail("no-access", "cannot open /dev/input/event* (is cap_dac_read_search set?)");
         }
-        fail("no-keyboards", "no input device has a Ctrl key");
+        fail("no-keyboards", "no input device has a watched key");
     }
 
     int state = ctrl_state();

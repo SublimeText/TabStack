@@ -10,7 +10,7 @@ from typing import IO, final
 
 import sublime
 
-HANDSHAKE = "tabstack-keystate 1"
+HANDSHAKE = "tabstack-keystate 2"
 DEFAULT_HELPER_PATH = "/usr/local/libexec/tabstack-keystate"
 
 _HANDSHAKE_PREFIX = "tabstack-keystate "
