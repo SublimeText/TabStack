@@ -14,8 +14,8 @@ if sys.platform == "darwin":
     def _start_platform_probe(on_done: Callable[[], None]) -> None:
         on_done()
 
-    def _watch_platform_settings(on_change: Callable[[], None]) -> None:
-        _ = on_change
+    def _watch_platform(on_invalidated: Callable[[], None]) -> None:
+        _ = on_invalidated
 
     def is_native_wayland() -> bool:
         return False
@@ -28,8 +28,8 @@ elif sys.platform == "win32":
     def _start_platform_probe(on_done: Callable[[], None]) -> None:
         on_done()
 
-    def _watch_platform_settings(on_change: Callable[[], None]) -> None:
-        _ = on_change
+    def _watch_platform(on_invalidated: Callable[[], None]) -> None:
+        _ = on_invalidated
 
     def is_native_wayland() -> bool:
         return False
@@ -38,7 +38,7 @@ else:
     from .linux import create_poller, is_native_wayland, probe
     from .linux import plugin_unloaded as _platform_plugin_unloaded
     from .linux.keystate_helper import HelperProbe, start_helper_probe
-    from .linux.keystate_helper import watch_helper_path as _watch_platform_settings
+    from .linux.keystate_helper import watch_helper as _watch_platform
 
     def _start_platform_probe(on_done: Callable[[], None]) -> None:
         def on_helper_probed(_: HelperProbe) -> None:
@@ -68,8 +68,9 @@ def refresh_availability(on_done: Callable[[], None] = lambda: None) -> None:
 
 def plugin_loaded() -> None:
     refresh_availability()
-    # The probe result only holds for the settings it was made with.
-    _watch_platform_settings(refresh_availability)
+    # The probe result only holds for the settings it was made with,
+    # and only until the probed helper fails.
+    _watch_platform(refresh_availability)
 
 
 def plugin_unloaded() -> None:

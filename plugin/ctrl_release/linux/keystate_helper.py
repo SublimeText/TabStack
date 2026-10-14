@@ -41,6 +41,8 @@ _probe: HelperProbe | None = None
 _probe_generation = 0
 # The path of the probe that is running or finished, as `_probe` may still be `None`.
 _probed_path: str | None = None
+# Called on the main thread once the probe result no longer holds.
+_on_invalidated: Callable[[], None] | None = None
 
 
 def helper_path() -> str:
@@ -137,24 +139,40 @@ def reset_helper_probe() -> None:
     _probed_path = None
 
 
-def watch_helper_path(on_change: Callable[[], None]) -> None:
-    """Call `on_change` whenever `keystate_helper_path` no longer matches the probed path."""
+def watch_helper(on_invalidated: Callable[[], None]) -> None:
+    """Call `on_invalidated` whenever the probe result no longer holds.
+
+    That is when `keystate_helper_path` no longer matches the probed path,
+    or when the probed helper fails during a session.
+    """
+    global _on_invalidated
+    _on_invalidated = on_invalidated
 
     def on_settings_changed() -> None:
         if helper_path() != _probed_path:
-            on_change()
+            on_invalidated()
 
     sublime.load_settings(_SETTINGS_FILE).add_on_change(_SETTINGS_WATCH_KEY, on_settings_changed)
 
 
+def _invalidate_probe(probe: HelperProbe) -> None:
+    # A newer probe or a reset already superseded the failed one.
+    if probe is not _probe or _on_invalidated is None:
+        return
+    _on_invalidated()
+
+
 @final
 class HelperCtrlReleasePoller(threading.Thread):
-    def __init__(self, on_release: Callable[[], None], interval_ms: int, path: str) -> None:
+    def __init__(
+        self, on_release: Callable[[], None], interval_ms: int, probe: HelperProbe
+    ) -> None:
         super().__init__(daemon=True)
         # The helper reports state changes as they happen, so there is nothing to poll.
         _ = interval_ms
         self._on_release = on_release
-        self._path = path
+        self._probe = probe
+        self._path = probe.path
         self._stop_event = threading.Event()
         self._lock = threading.Lock()
         self._process: subprocess.Popen[str] | None = None
@@ -221,7 +239,7 @@ class HelperCtrlReleasePoller(threading.Thread):
                 self._ctrl_down = True
             elif line == "0":
                 self._ctrl_down = False
-                self._fire_release()
+                _ = self._fire_release()
                 return
             elif line.startswith("error "):
                 print(f"TabStack: {self._path} reported: {line}")
@@ -234,16 +252,23 @@ class HelperCtrlReleasePoller(threading.Thread):
 
     def _fail(self) -> None:
         self._ctrl_down = False
-        self._fire_release()
+        if not self._fire_release():
+            return
+        # The helper worked when probed; probe it again so that later sessions
+        # fall back to X11 or offer the setup instead of committing immediately.
+        probe = self._probe
+        sublime.set_timeout(lambda: _invalidate_probe(probe))
 
-    def _fire_release(self) -> None:
+    def _fire_release(self) -> bool:
+        """Schedule the release callback; return whether it was scheduled."""
         # The lock makes the check-and-set atomic with respect to `stop`,
         # so that no release is scheduled once the session stopped the poller.
         with self._lock:
             if self._stop_event.is_set():
-                return
+                return False
             self._stop_event.set()
         sublime.set_timeout(self._on_release)
+        return True
 
     def _close_stdin(self) -> None:
         with self._lock:
@@ -268,5 +293,7 @@ class HelperCtrlReleasePoller(threading.Thread):
 
 
 def plugin_unloaded() -> None:
+    global _on_invalidated
     sublime.load_settings(_SETTINGS_FILE).clear_on_change(_SETTINGS_WATCH_KEY)
+    _on_invalidated = None
     reset_helper_probe()
