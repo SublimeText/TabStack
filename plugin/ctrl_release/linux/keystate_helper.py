@@ -156,7 +156,19 @@ def _finish_probe(
     if generation != _probe_generation:
         return
     _probe = result
+    _report_broken_helper(result)
     on_done(result)
+
+
+def _report_broken_helper(result: HelperProbe) -> None:
+    # A missing helper is the normal state without a setup; any other failure
+    # means that a set-up helper stopped working, e.g. after a package update.
+    if result.status in (HelperStatus.OK, HelperStatus.MISSING):
+        return
+    print(
+        f"TabStack: the tabstack-keystate helper does not work ({result.status.value}):"
+        + f" {result.detail} Run `TabStack: Set Up Ctrl Detection for Wayland` for instructions."
+    )
 
 
 def reset_helper_probe() -> None:
