@@ -1,0 +1,26 @@
+{
+  "contributions": {
+    "settings": [
+      {
+        "file_patterns": ["/TabStack.sublime-settings"],
+        "schema": {
+          "$id": "sublime://settings/TabStack",
+          "type": "object",
+          "properties": {
+            "keystate_helper_path": {
+              "type": "string",
+              "default": "/usr/local/libexec/tabstack-keystate",
+              "markdownDescription": "Path to the `tabstack-keystate` helper that detects Ctrl releases on Linux.\n\nIt is used whenever it works, and it is required under native Wayland."
+            },
+            "show_wayland_setup_dialog": {
+              "type": "boolean",
+              "default": true,
+              "markdownDescription": "Offer the helper's setup instructions on the first `ctrl+tab` per plugin load when Ctrl-release detection is unavailable under native Wayland.\n\nThe dialog's \"Don't Ask Again\" button sets this to `false`."
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    ]
+  }
+}
