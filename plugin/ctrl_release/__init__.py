@@ -17,6 +17,9 @@ if sys.platform == "darwin":
     def _watch_platform_settings(on_change: Callable[[], None]) -> None:
         _ = on_change
 
+    def is_native_wayland() -> bool:
+        return False
+
 elif sys.platform == "win32":
     from .windows import CtrlReleasePoller as create_poller
     from .windows import plugin_unloaded as _platform_plugin_unloaded
@@ -28,10 +31,13 @@ elif sys.platform == "win32":
     def _watch_platform_settings(on_change: Callable[[], None]) -> None:
         _ = on_change
 
+    def is_native_wayland() -> bool:
+        return False
+
 else:
     from .keystate_helper import HelperProbe, start_helper_probe
     from .keystate_helper import watch_helper_path as _watch_platform_settings
-    from .linux import create_poller, probe
+    from .linux import create_poller, is_native_wayland, probe
     from .linux import plugin_unloaded as _platform_plugin_unloaded
 
     def _start_platform_probe(on_done: Callable[[], None]) -> None:
@@ -74,6 +80,7 @@ def plugin_unloaded() -> None:
 __all__ = [
     "create_poller",
     "is_available",
+    "is_native_wayland",
     "probe",
     "plugin_loaded",
     "plugin_unloaded",

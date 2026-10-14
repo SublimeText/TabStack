@@ -1,0 +1,6 @@
+[
+  {
+    "caption": "TabStack: Set Up Ctrl Detection for Wayland",
+    "command": "tab_stack_setup_keystate_helper"
+  },
+]
