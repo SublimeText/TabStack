@@ -56,7 +56,7 @@ class TabStackSetupKeystateHelperCommand(sublime_plugin.WindowCommand):
             return
 
         window = self.window
-        _ = window.open_file(source_path)
+        source_view = window.open_file(source_path)
         view = window.new_file(syntax="Packages/Markdown/Markdown.sublime-syntax")
         view.set_name("TabStack Setup")
         view.set_scratch(True)
@@ -64,6 +64,7 @@ class TabStackSetupKeystateHelperCommand(sublime_plugin.WindowCommand):
             "append", {"characters": _instructions(probe, extraction_dir, source_path)}
         )
         view.set_read_only(True)
+        _show_side_by_side(window, view, source_view)
 
 
 def offer_wayland_setup(window: sublime.Window) -> bool:
@@ -102,6 +103,21 @@ def _extract_source(extraction_dir: str) -> str:
     with open(source_path, "wb") as file:
         _ = file.write(source)
     return source_path
+
+
+def _show_side_by_side(window: sublime.Window, left: sublime.View, right: sublime.View) -> None:
+    """Select both views' sheets so that Sublime Text shows them side by side.
+
+    The source may have been open already, possibly in another group,
+    so the new `left` view is moved in front of it instead of the other way around.
+    """
+    left_sheet = left.sheet()
+    right_sheet = right.sheet()
+    if left_sheet is None or right_sheet is None:
+        return
+    group, index = window.get_sheet_index(right_sheet)
+    window.set_sheet_index(left_sheet, group, index)
+    window.select_sheets([left_sheet, right_sheet])
 
 
 def _instructions(probe: HelperProbe, extraction_dir: str, source_path: str) -> str:
@@ -163,7 +179,7 @@ and reports changes to TabStack on its standard output.
 ## Security implications
 
 Review the helper's source before building it.
-It was extracted to `{source_path}` and opened in another tab.
+It was extracted to `{source_path}` and opened next to these instructions.
 
 - The input devices are only readable by root (and usually the `input` group).
   The helper is therefore granted the `cap_dac_read_search` file capability,
