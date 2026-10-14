@@ -18,6 +18,9 @@ def _ensure_ctrl_release_poller(window: sublime.Window, state: TabStackWindowSta
         return
 
     def on_release() -> None:
+        # A release queued before this poller was stopped must not commit a newer session.
+        if state.ctrl_release_poller is not poller:
+            return
         if state.session_active:
             _commit_session(window, state)
         elif state.session_pending:
