@@ -17,7 +17,9 @@ class Poller(Protocol):
 class CtrlPoller(Poller, Protocol):
     def start(self) -> None: ...
 
-    def is_ctrl_down(self) -> bool: ...
+    def is_ctrl_down(self) -> bool | None:
+        """Return whether Ctrl is held, or `None` while the state is not known yet."""
+        ...
 
 
 @dataclass

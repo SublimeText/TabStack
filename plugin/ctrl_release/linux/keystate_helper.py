@@ -158,9 +158,9 @@ class HelperCtrlReleasePoller(threading.Thread):
         self._stop_event = threading.Event()
         self._lock = threading.Lock()
         self._process: subprocess.Popen[str] | None = None
-        # Ctrl counts as held until the helper reports otherwise,
-        # so that a slow helper start keeps the session instead of dropping it.
-        self._ctrl_down = True
+        # Unknown until the helper reports the initial state, which can take longer
+        # than the panel delay; assuming Ctrl held would flash the panel on a quick press.
+        self._ctrl_down: bool | None = None
 
     def start(self) -> None:
         if self.is_alive():
@@ -185,7 +185,7 @@ class HelperCtrlReleasePoller(threading.Thread):
         finally:
             self._terminate(process)
 
-    def is_ctrl_down(self) -> bool:
+    def is_ctrl_down(self) -> bool | None:
         return self._ctrl_down
 
     def _spawn(self) -> subprocess.Popen[str] | None:
