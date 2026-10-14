@@ -17,7 +17,9 @@ target-version = "py38"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
-ignore = ["UP045"]
+
+[tool.ruff.lint.isort]
+required-imports = ["from __future__ import annotations"]
 
 [tool.basedpyright]
 pythonVersion = "3.8"

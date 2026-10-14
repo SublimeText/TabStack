@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 
 # Clear sys.modules cache if package is reloaded, manually or after an update.

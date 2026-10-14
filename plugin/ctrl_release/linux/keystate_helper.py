@@ -6,7 +6,7 @@ import threading
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import IO, Optional, final
+from typing import IO, final
 
 import sublime
 
@@ -37,10 +37,10 @@ class HelperProbe:
     detail: str
 
 
-_probe: Optional[HelperProbe] = None
+_probe: HelperProbe | None = None
 _probe_generation = 0
 # The path of the probe that is running or finished, as `_probe` may still be `None`.
-_probed_path: Optional[str] = None
+_probed_path: str | None = None
 
 
 def helper_path() -> str:
@@ -94,7 +94,7 @@ def _parse_probe_output(path: str, lines: list[str]) -> HelperProbe:
     return HelperProbe(path, HelperStatus.FAILED, f"{path} reported no Ctrl key state.")
 
 
-def get_helper_probe() -> Optional[HelperProbe]:
+def get_helper_probe() -> HelperProbe | None:
     """Return the result of the last probe, or `None` while it is still running."""
     return _probe
 
@@ -157,7 +157,7 @@ class HelperCtrlReleasePoller(threading.Thread):
         self._path = path
         self._stop_event = threading.Event()
         self._lock = threading.Lock()
-        self._process: Optional[subprocess.Popen[str]] = None
+        self._process: subprocess.Popen[str] | None = None
         # Ctrl counts as held until the helper reports otherwise,
         # so that a slow helper start keeps the session instead of dropping it.
         self._ctrl_down = True
@@ -188,7 +188,7 @@ class HelperCtrlReleasePoller(threading.Thread):
     def is_ctrl_down(self) -> bool:
         return self._ctrl_down
 
-    def _spawn(self) -> Optional[subprocess.Popen[str]]:
+    def _spawn(self) -> subprocess.Popen[str] | None:
         with self._lock:
             if self._stop_event.is_set():
                 return None

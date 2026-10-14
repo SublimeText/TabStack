@@ -21,7 +21,7 @@ import subprocess
 import sys
 import tempfile
 import time
-from typing import Optional, cast
+from typing import cast
 
 HANDSHAKE = "tabstack-keystate 1"
 LINE_TIMEOUT = 2.0
@@ -105,7 +105,7 @@ class Helper:
         _ = self._selector.register(self._stdout_fd, selectors.EVENT_READ)
         self._buffer: bytes = b""
 
-    def read_line(self, timeout: float) -> Optional[str]:
+    def read_line(self, timeout: float) -> str | None:
         """Return the next line, or `None` on timeout or EOF."""
         deadline = time.monotonic() + timeout
         while b"\n" not in self._buffer:

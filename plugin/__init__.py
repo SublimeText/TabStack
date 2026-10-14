@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from .commands import *  # noqa: F401,F403
 from .ctrl_release import plugin_loaded as _ctrl_release_plugin_loaded
 from .ctrl_release import plugin_unloaded as _ctrl_release_plugin_unloaded

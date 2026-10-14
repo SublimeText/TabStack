@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from collections.abc import Callable
-from typing import Optional
 
 from ...state import CtrlPoller
 from .keystate_helper import HelperCtrlReleasePoller, HelperStatus, get_helper_probe
@@ -30,7 +29,7 @@ def probe() -> bool:
     return not is_native_wayland() and is_x11_available()
 
 
-def _working_helper_path() -> Optional[str]:
+def _working_helper_path() -> str | None:
     helper_probe = get_helper_probe()
     if helper_probe is None or helper_probe.status is not HelperStatus.OK:
         return None

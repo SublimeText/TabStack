@@ -3,14 +3,14 @@ from __future__ import annotations
 import ctypes
 import threading
 from collections.abc import Callable
-from typing import Optional, cast, final
+from typing import cast, final
 
 import sublime
 
 from ._availability import set_unavailable
 
 _VK_CONTROL = 0x11
-_get_async_key_state: Optional[Callable[[int], int]] = None
+_get_async_key_state: Callable[[int], int] | None = None
 
 
 @final
@@ -57,7 +57,7 @@ def probe() -> bool:
     return _load_key_state() is not None
 
 
-def _load_key_state() -> Optional[Callable[[int], int]]:
+def _load_key_state() -> Callable[[int], int] | None:
     global _get_async_key_state
     if _get_async_key_state is not None:
         return _get_async_key_state

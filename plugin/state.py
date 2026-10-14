@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional, Protocol
+from typing import Protocol
 
 import sublime
 
@@ -26,13 +26,13 @@ class TabStackWindowState:
     session_pending: bool = False
     session_pending_token: int = 0
     """Monotonically incremented token to track and implicitly cancel set_timeout callbacks."""
-    session_origin_selection: Optional[GroupSelectionState] = None
+    session_origin_selection: GroupSelectionState | None = None
     session_selected_index: int = 0
     session_group: int = 0
-    session_entries: Optional[list[Entry]] = None
+    session_entries: list[Entry] | None = None
     session_panel_reopening: bool = False
-    selection_poller: Optional[Poller] = None
-    ctrl_release_poller: Optional[CtrlPoller] = None
+    selection_poller: Poller | None = None
+    ctrl_release_poller: CtrlPoller | None = None
     overlay_views: set[int] = field(default_factory=set)
     """Ids of the currently focused overlay/quick-panel widget views.
 
