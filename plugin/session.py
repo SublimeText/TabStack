@@ -72,10 +72,7 @@ def schedule_panel(window: sublime.Window, state: TabStackWindowState, *, token:
         if not state.session_pending or state.session_pending_token != token:
             return
         if state.ctrl_release_poller is not None and not state.ctrl_release_poller.is_ctrl_down():
-            # A fast tap releases Ctrl before this deadline. Committing here
-            # covers the case where the poller's callback has not run yet;
-            # clearing instead drops the tab switch.
-            _commit_pending_session(window, state)
+            state.clear_session()
             return
         state.session_active = True
         state.session_pending = False
