@@ -4,6 +4,7 @@ import sublime
 
 from .constants import KIND_MODIFIED
 from .ctrl_release import create_poller
+from .settings import load_settings
 from .sheets import apply_group_selection
 from .state import TabStackWindowState
 
@@ -11,8 +12,6 @@ SHOW_PANEL_DELAY_MS = 150
 # How long to keep a session pending past the panel delay while the Ctrl state is unknown.
 CTRL_STATE_TIMEOUT_MS = 1000
 CTRL_STATE_RETRY_MS = 10
-
-_SETTINGS_FILE = "TabStack.sublime-settings"
 
 
 def _ensure_ctrl_release_poller(window: sublime.Window, state: TabStackWindowState) -> None:
@@ -47,7 +46,7 @@ def show_panel(window: sublime.Window, state: TabStackWindowState) -> None:
         for entry in entries
     ]
 
-    preview_tabs = bool(sublime.load_settings(_SETTINGS_FILE).get("preview_tabs", True))
+    preview_tabs = bool(load_settings().get("preview_tabs", True))
 
     def on_select(index: int) -> None:
         if index < 0:

@@ -10,12 +10,13 @@ from typing import IO, cast, final
 
 import sublime
 
+from ...settings import load_settings
+
 HANDSHAKE = "tabstack-keystate 2"
 DEFAULT_HELPER_PATH = "/usr/local/libexec/tabstack-keystate"
 DEFAULT_CTRL_KEYS = ("leftctrl", "rightctrl")
 
 _HANDSHAKE_PREFIX = "tabstack-keystate "
-_SETTINGS_FILE = "TabStack.sublime-settings"
 _SETTINGS_WATCH_KEY = "tab_stack_keystate_helper"
 _PROBE_TIMEOUT_S = 2
 _EXIT_TIMEOUT_S = 1
@@ -52,14 +53,14 @@ _on_invalidated: Callable[[], None] | None = None
 
 
 def helper_path() -> str:
-    path = sublime.load_settings(_SETTINGS_FILE).get("keystate_helper_path", DEFAULT_HELPER_PATH)
+    path = load_settings().get("keystate_helper_path", DEFAULT_HELPER_PATH)
     if not isinstance(path, str) or not path:
         path = DEFAULT_HELPER_PATH
     return os.path.expanduser(path)
 
 
 def helper_ctrl_keys() -> tuple[str, ...]:
-    keys: object = sublime.load_settings(_SETTINGS_FILE).get("keystate_ctrl_keys")
+    keys: object = load_settings().get("keystate_ctrl_keys")
     if not isinstance(keys, list) or not keys:
         return DEFAULT_CTRL_KEYS
     # The helper validates the names against its allowlist and reports a usage error.
@@ -191,7 +192,7 @@ def watch_helper(on_invalidated: Callable[[], None]) -> None:
         if _helper_config() != _probed_config:
             on_invalidated()
 
-    sublime.load_settings(_SETTINGS_FILE).add_on_change(_SETTINGS_WATCH_KEY, on_settings_changed)
+    load_settings().add_on_change(_SETTINGS_WATCH_KEY, on_settings_changed)
 
 
 def _invalidate_probe(probe: HelperProbe) -> None:
@@ -333,6 +334,6 @@ class HelperCtrlReleasePoller(threading.Thread):
 
 def plugin_unloaded() -> None:
     global _on_invalidated
-    sublime.load_settings(_SETTINGS_FILE).clear_on_change(_SETTINGS_WATCH_KEY)
+    load_settings().clear_on_change(_SETTINGS_WATCH_KEY)
     _on_invalidated = None
     reset_helper_probe()

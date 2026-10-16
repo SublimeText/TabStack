@@ -13,13 +13,13 @@ from .ctrl_release.linux.keystate_helper import (
     HelperStatus,
     get_helper_probe,
 )
+from .settings import load_settings, save_settings
 
 __all__ = ["TabStackReplaceContentsCommand", "TabStackSetupKeystateHelperCommand"]
 
 assert __package__ is not None
 # This module lives in the `plugin` subpackage; resources are addressed by the top-level package.
 _PACKAGE_NAME = __package__.split(".")[0]
-_SETTINGS_FILE = "TabStack.sublime-settings"
 _SOURCE_NAME = "tabstack-keystate.c"
 _SETUP_COMMAND = "tab_stack_setup_keystate_helper"
 _SETUP_CAPTION = "TabStack: Set Up Ctrl Detection for Wayland"
@@ -91,7 +91,7 @@ def offer_wayland_setup(window: sublime.Window) -> bool:
     if get_helper_probe() is None:
         # The background probe has not finished; the helper may still turn out to work.
         return False
-    settings = sublime.load_settings(_SETTINGS_FILE)
+    settings = load_settings()
     if not settings.get("show_wayland_setup_dialog", True):
         return False
 
@@ -105,7 +105,7 @@ def offer_wayland_setup(window: sublime.Window) -> bool:
         window.run_command(_SETUP_COMMAND)
     elif result == sublime.DIALOG_NO:
         settings.set("show_wayland_setup_dialog", False)
-        sublime.save_settings(_SETTINGS_FILE)
+        save_settings()
     return True
 
 
