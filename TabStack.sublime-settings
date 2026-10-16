@@ -1,4 +1,8 @@
 {
+  // Switch to the highlighted tab while the quick panel is open.
+  // When `false`, the tab only changes once the switch is committed.
+  "preview_tabs": true,
+
   // Path to the `tabstack-keystate` helper that detects Ctrl releases on Linux.
   // It is used whenever it works, and it is required under native Wayland.
   "keystate_helper_path": "/usr/local/libexec/tabstack-keystate",

@@ -27,6 +27,7 @@
   It reuses an open instructions view (marked by the `tab_stack_setup_instructions` view setting) and selects it together with the source, instructions on the left.
   The plugin never runs `sudo`, a compiler or `setcap`; the user installs the helper to `keystate_helper_path` (default `/usr/local/libexec/tabstack-keystate`) with `cap_dac_read_search`, which the helper drops right after opening the input devices.
 - `tab_stack_open` arms a pending session, starts a Ctrl-release poller, and opens the quick panel after a short delay unless Ctrl is released first.
+- Highlighting a quick-panel entry previews its tab via `preview_entry`, unless `preview_tabs` is `false`; the selection is then only applied on commit.
 - Wrap-around cycling is implemented by intentionally closing and reopening the quick panel at the opposite boundary.
   That handoff keeps the session active and reuses the existing Ctrl-release poller.
 - `tab_stack.session_active` is the quick-panel session context key.

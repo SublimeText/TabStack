@@ -7,6 +7,11 @@
           "$id": "sublime://settings/TabStack",
           "type": "object",
           "properties": {
+            "preview_tabs": {
+              "type": "boolean",
+              "default": true,
+              "markdownDescription": "Switch to the highlighted tab while the quick panel is open.\n\nWhen `false`, the tab only changes once the switch is committed."
+            },
             "keystate_helper_path": {
               "type": "string",
               "default": "/usr/local/libexec/tabstack-keystate",

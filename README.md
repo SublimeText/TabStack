@@ -3,7 +3,7 @@
 TabStack is a [Sublime Text][] (build 4100+) package
 for switching between open tabs using an MRU-style stack.
 It keeps tab order per window
-and previews tabs in the quick panel
+and, optionally, previews tabs in the quick panel
 before committing the switch.
 It also preserves tab ordering across sessions
 and supports multiple selections.
@@ -37,6 +37,19 @@ Press one of those shortcuts to open the tab stack quick panel.
 Use the same keys to move through the list while it is open.
 Release `ctrl` to commit the selected tab.
 Press `ctrl+escape` to cancel.
+
+
+## Settings
+
+In `TabStack.sublime-settings`,
+which `Preferences: TabStack Settings` opens from the Command Palette:
+
+- `preview_tabs`:
+  set to `false` to stay on the current tab while moving through the quick panel.
+  The highlighted tab is then only shown once the switch is committed.
+
+The settings for the Ctrl-release helper
+are described under [Wayland Setup](#wayland-setup).
 
 
 ## Platform Support

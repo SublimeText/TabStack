@@ -12,6 +12,8 @@ SHOW_PANEL_DELAY_MS = 150
 CTRL_STATE_TIMEOUT_MS = 1000
 CTRL_STATE_RETRY_MS = 10
 
+_SETTINGS_FILE = "TabStack.sublime-settings"
+
 
 def _ensure_ctrl_release_poller(window: sublime.Window, state: TabStackWindowState) -> None:
     if state.ctrl_release_poller:
@@ -45,6 +47,8 @@ def show_panel(window: sublime.Window, state: TabStackWindowState) -> None:
         for entry in entries
     ]
 
+    preview_tabs = bool(sublime.load_settings(_SETTINGS_FILE).get("preview_tabs", True))
+
     def on_select(index: int) -> None:
         if index < 0:
             handle_panel_closed(window, state)
@@ -56,7 +60,8 @@ def show_panel(window: sublime.Window, state: TabStackWindowState) -> None:
         if index < 0 or index >= len(entries):
             return
         state.session_selected_index = index
-        preview_entry(window, state)
+        if preview_tabs:
+            preview_entry(window, state)
 
     window.show_quick_panel(
         items,
