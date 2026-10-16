@@ -4,7 +4,7 @@ import ctypes
 import ctypes.util
 import threading
 from collections.abc import Callable
-from typing import Optional, cast, final
+from typing import cast, final
 
 import sublime
 
@@ -13,7 +13,7 @@ from ._availability import set_unavailable
 _CG_EVENT_SOURCE_STATE_COMBINED_SESSION_STATE = 0
 _K_VK_CONTROL = 59
 _K_VK_RIGHT_CONTROL = 62
-_key_state: Optional[Callable[[int, int], bool]] = None
+_key_state: Callable[[int, int], bool] | None = None
 
 
 @final
@@ -66,7 +66,7 @@ def probe() -> bool:
     return _load_key_state() is not None
 
 
-def _load_key_state() -> Optional[Callable[[int, int], bool]]:
+def _load_key_state() -> Callable[[int, int], bool] | None:
     global _key_state
     if _key_state is not None:
         return _key_state

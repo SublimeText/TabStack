@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, cast, final
+from typing import TYPE_CHECKING, cast, final
 
 import sublime
 
@@ -55,9 +55,7 @@ class SelectionHistoryPoller:
         self._schedule()
 
 
-def current_group_selection_state(
-    window: sublime.Window, group: int
-) -> Optional[GroupSelectionState]:
+def current_group_selection_state(window: sublime.Window, group: int) -> GroupSelectionState | None:
     selected_sheets = list(window.selected_sheets_in_group(group))
     selected_identities = [
         sheet_identity(sheet, window) for sheet in selected_sheets if sheet.group() is not None
@@ -190,7 +188,7 @@ def prune_group_state_for_live_sheets(
     window: sublime.Window,
     group: int,
     group_state: GroupSelectionState,
-) -> Optional[GroupSelectionState]:
+) -> GroupSelectionState | None:
     selected_sheets = [
         identity
         for identity in group_state["selected_sheets"]
@@ -210,10 +208,10 @@ def prune_group_state_for_live_sheets(
 
 
 def prune_active_sheet_index(
-    active_sheet_index: Optional[int],
+    active_sheet_index: int | None,
     original_selected_sheets: list[SheetIdentity],
     pruned_selected_sheets: list[SheetIdentity],
-) -> Optional[int]:
+) -> int | None:
     if active_sheet_index is None:
         return None
     if active_sheet_index < 0 or active_sheet_index >= len(original_selected_sheets):
@@ -229,7 +227,7 @@ def prune_active_sheet_index(
 def prune_group_state(
     group_state: GroupSelectionState,
     seen_identities: list[SheetIdentity],
-) -> Optional[GroupSelectionState]:
+) -> GroupSelectionState | None:
     selected_sheets = [
         identity for identity in group_state["selected_sheets"] if identity not in seen_identities
     ]
@@ -249,7 +247,7 @@ def prune_group_state(
 
 def prune_history_stack(
     group_state_stack: list[GroupSelectionState],
-    removed_identities: Optional[list[SheetIdentity]] = None,
+    removed_identities: list[SheetIdentity] | None = None,
 ) -> list[GroupSelectionState]:
     updated_stack: list[GroupSelectionState] = []
     seen_identities: list[SheetIdentity] = list(removed_identities or [])

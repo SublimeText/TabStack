@@ -10,11 +10,11 @@ from typing import Optional, cast, final
 
 import sublime
 
-from ._availability import set_unavailable
+from .._availability import set_unavailable
 
 _XK_Control_L = 0xFFE3
 _XK_Control_R = 0xFFE4
-_x11: Optional[ctypes.CDLL] = None
+_x11: ctypes.CDLL | None = None
 
 
 @dataclass
@@ -27,7 +27,7 @@ class _X11State:
 
 
 @final
-class CtrlReleasePoller(threading.Thread):
+class X11CtrlReleasePoller(threading.Thread):
     def __init__(self, on_release: Callable[[], None], interval_ms: int) -> None:
         super().__init__(daemon=True)
         self._on_release = on_release
@@ -85,7 +85,7 @@ class CtrlReleasePoller(threading.Thread):
     def is_ctrl_down(self) -> bool:
         return self._ctrl_down()
 
-    def _open_x11_state(self) -> Optional[_X11State]:
+    def _open_x11_state(self) -> _X11State | None:
         display_name = os.environ.get("DISPLAY")
         if not display_name:
             return None
@@ -111,7 +111,7 @@ class CtrlReleasePoller(threading.Thread):
         )
 
 
-def probe() -> bool:
+def is_x11_available() -> bool:
     return _get_x11() is not None
 
 
@@ -125,7 +125,7 @@ def _keycode_is_down(keymap: ctypes.Array[ctypes.c_ubyte], keycode: int) -> bool
     return bool(keymap_byte & (1 << bit))
 
 
-def _get_x11() -> Optional[ctypes.CDLL]:
+def _get_x11() -> ctypes.CDLL | None:
     global _x11
     if _x11 is not None:
         return _x11

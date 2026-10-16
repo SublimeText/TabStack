@@ -6,6 +6,7 @@ from .ctrl_release import is_available
 from .history import current_group_selection_state, sync_selection_history
 from .mru import collect_entries
 from .session import cancel_session, reopen_panel_at_index, schedule_panel, show_panel
+from .setup import offer_wayland_setup
 from .state import get_state
 
 
@@ -13,6 +14,9 @@ class TabStackOpenCommand(sublime_plugin.WindowCommand):
     def run(self, *, forward: bool = True, selected_index: int = 1) -> None:
         window = self.window
         if not is_available():
+            # The dialog replaces the fallback for this key press, whatever the answer.
+            if offer_wayland_setup(window):
+                return
             window.run_command("next_view_in_stack" if forward else "prev_view_in_stack")
             return
         elif not forward:

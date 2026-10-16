@@ -1,7 +1,15 @@
+from __future__ import annotations
+
 from .commands import *  # noqa: F401,F403
+from .ctrl_release import plugin_loaded as _ctrl_release_plugin_loaded
 from .ctrl_release import plugin_unloaded as _ctrl_release_plugin_unloaded
 from .listener import *  # noqa: F401,F403
+from .setup import *  # noqa: F401,F403
 from .state import iter_states as _iter_states
+
+
+def plugin_loaded() -> None:
+    _ctrl_release_plugin_loaded()
 
 
 def plugin_unloaded() -> None:

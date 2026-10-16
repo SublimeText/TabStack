@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import sublime
 import sublime_plugin
@@ -84,12 +84,12 @@ class TabStackListener(sublime_plugin.EventListener):
     def on_query_context(
         self,
         # `view` is widened because ST may query contexts without a view.
-        view: Optional[sublime.View],
+        view: sublime.View | None,
         key: str,
         operator: sublime.QueryOperator,
         operand: Value,
         match_all: bool,
-    ) -> Optional[bool]:
+    ) -> bool | None:
         if key == "tab_stack.ctrl_release_available":
             value = is_available()
         elif key in {

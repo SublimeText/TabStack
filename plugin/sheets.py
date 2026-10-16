@@ -7,7 +7,7 @@ import sublime
 from .models import GroupSelectionState, SheetIdentity
 
 
-def active_sheet_identity(window: sublime.Window) -> Optional[SheetIdentity]:
+def active_sheet_identity(window: sublime.Window) -> SheetIdentity | None:
     sheet = window.active_sheet()
     if sheet is None:
         return None
@@ -18,7 +18,7 @@ def find_sheet_by_identity_and_group(
     window: sublime.Window,
     identity: SheetIdentity,
     group: int,
-) -> Optional[sublime.Sheet]:
+) -> sublime.Sheet | None:
     matching = [
         sheet
         for sheet in window.sheets_in_group(group)
@@ -62,7 +62,7 @@ def sheet_occurrence(sheet: sublime.Sheet, window: sublime.Window) -> int:
         return 0
 
 
-def sheet_name(sheet: sublime.Sheet) -> Optional[str]:
+def sheet_name(sheet: sublime.Sheet) -> str | None:
     # `Sheet.name` only exists on ST builds >=4205.
     get_name = cast(Optional[Callable[[], str]], getattr(sheet, "name", None))
     return get_name() if get_name else None

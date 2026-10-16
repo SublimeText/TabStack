@@ -1,0 +1,45 @@
+{
+  "contributions": {
+    "settings": [
+      {
+        "file_patterns": ["/TabStack.sublime-settings"],
+        "schema": {
+          "$id": "sublime://settings/TabStack",
+          "type": "object",
+          "properties": {
+            "keystate_helper_path": {
+              "type": "string",
+              "default": "/usr/local/libexec/tabstack-keystate",
+              "markdownDescription": "Path to the `tabstack-keystate` helper that detects Ctrl releases on Linux.\n\nIt is used whenever it works, and it is required under native Wayland."
+            },
+            "keystate_ctrl_keys": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "leftctrl",
+                  "rightctrl",
+                  "capslock",
+                  "leftalt",
+                  "rightalt",
+                  "leftmeta",
+                  "rightmeta",
+                  "compose"
+                ]
+              },
+              "minItems": 1,
+              "uniqueItems": true,
+              "default": ["leftctrl", "rightctrl"],
+              "markdownDescription": "The keys the `tabstack-keystate` helper treats as Ctrl, for keyboard layouts that remap Ctrl, e.g. `[\"leftctrl\", \"rightctrl\", \"capslock\"]` for the XKB option `ctrl:nocaps`.\n\nOnly modifier keys are allowed, so that the helper cannot be used to log keystrokes."
+            },
+            "show_wayland_setup_dialog": {
+              "type": "boolean",
+              "default": true,
+              "markdownDescription": "Offer the helper's setup instructions on the first `ctrl+tab` per plugin load when Ctrl-release detection is unavailable under native Wayland.\n\nThe dialog's \"Don't Ask Again\" button sets this to `false`."
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    ]
+  }
+}

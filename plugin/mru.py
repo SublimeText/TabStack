@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 import sublime
 
 from .captions import caption_for_sheet_identities
@@ -13,7 +11,7 @@ from .sheets import identities_have_dirty_sheet, sheet_identity
 def collect_entries(window: sublime.Window, history: SheetSelectionHistory) -> list[Entry]:
     entries: list[Entry] = []
     active_group = window.active_group()
-    seen_identities: set[tuple[Optional[str], int, Optional[str], Optional[str]]] = set()
+    seen_identities: set[tuple[str | None, int, str | None, str | None]] = set()
 
     group_state_stack = history["groups"].get(str(active_group))
     if group_state_stack:
@@ -62,13 +60,13 @@ def _non_transient_sheets_in_group(
 
 def _selection_identity_keys(
     selection: GroupSelectionState,
-) -> set[tuple[Optional[str], int, Optional[str], Optional[str]]]:
+) -> set[tuple[str | None, int, str | None, str | None]]:
     return {_identity_key(identity) for identity in selection["selected_sheets"]}
 
 
 def _identity_key(
     identity: SheetIdentity,
-) -> tuple[Optional[str], int, Optional[str], Optional[str]]:
+) -> tuple[str | None, int, str | None, str | None]:
     return (
         identity["name"],
         identity["occurrence"],

@@ -7,20 +7,20 @@ They live in their own module so the modules operating on them
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, TypedDict
+from typing import TypedDict
 
 
 class SheetIdentity(TypedDict):
-    name: Optional[str]
+    name: str | None
     """The sheet name is `None` on ST builds <4205
     because the required API method does not exist there."""
     occurrence: int
-    kind: Optional[str]
-    path: Optional[str]
+    kind: str | None
+    path: str | None
 
 
 class GroupSelectionState(TypedDict):
-    active_sheet_index: Optional[int]
+    active_sheet_index: int | None
     selected_sheets: list[SheetIdentity]
 
 

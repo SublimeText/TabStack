@@ -3,11 +3,14 @@ from __future__ import annotations
 import sublime
 
 from .constants import KIND_MODIFIED
-from .ctrl_release import CtrlReleasePoller
+from .ctrl_release import create_poller
 from .sheets import apply_group_selection
 from .state import TabStackWindowState
 
 SHOW_PANEL_DELAY_MS = 150
+# How long to keep a session pending past the panel delay while the Ctrl state is unknown.
+CTRL_STATE_TIMEOUT_MS = 1000
+CTRL_STATE_RETRY_MS = 10
 
 
 def _ensure_ctrl_release_poller(window: sublime.Window, state: TabStackWindowState) -> None:
@@ -15,12 +18,15 @@ def _ensure_ctrl_release_poller(window: sublime.Window, state: TabStackWindowSta
         return
 
     def on_release() -> None:
+        # A release queued before this poller was stopped must not commit a newer session.
+        if state.ctrl_release_poller is not poller:
+            return
         if state.session_active:
             _commit_session(window, state)
         elif state.session_pending:
             _commit_pending_session(window, state)
 
-    poller = CtrlReleasePoller(on_release, 25)
+    poller = create_poller(on_release, 25)
     state.ctrl_release_poller = poller
     poller.start()
 
@@ -66,17 +72,27 @@ def show_panel(window: sublime.Window, state: TabStackWindowState) -> None:
 def schedule_panel(window: sublime.Window, state: TabStackWindowState, *, token: int) -> None:
     _ensure_ctrl_release_poller(window, state)
 
-    def open_if_still_pending() -> None:
+    def open_if_still_pending(waited_ms: int) -> None:
         if not state.session_pending or state.session_pending_token != token:
             return
-        if state.ctrl_release_poller is not None and not state.ctrl_release_poller.is_ctrl_down():
-            state.clear_session()
+        poller = state.ctrl_release_poller
+        ctrl_down = poller.is_ctrl_down() if poller is not None else True
+        if ctrl_down is None and waited_ms < CTRL_STATE_TIMEOUT_MS:
+            # A release reported meanwhile commits the pending session through the poller.
+            sublime.set_timeout(
+                lambda: open_if_still_pending(waited_ms + CTRL_STATE_RETRY_MS),
+                CTRL_STATE_RETRY_MS,
+            )
+            return
+        if ctrl_down is False:
+            # Ctrl was released before the panel appeared; switch like a quick press would.
+            _commit_pending_session(window, state)
             return
         state.session_active = True
         state.session_pending = False
         show_panel(window, state)
 
-    sublime.set_timeout(open_if_still_pending, SHOW_PANEL_DELAY_MS)
+    sublime.set_timeout(lambda: open_if_still_pending(0), SHOW_PANEL_DELAY_MS)
 
 
 def preview_entry(window: sublime.Window, state: TabStackWindowState) -> None:
