@@ -10,7 +10,7 @@ and supports multiple selections.
 When closing a tab,
 TabStack restores the previous selection.
 
-[Video Showcase][]
+https://github.com/user-attachments/assets/62314150-c6d9-4478-906e-411bad1b2b9d
 
 
 ## Installation
